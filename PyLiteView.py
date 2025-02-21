@@ -68,23 +68,6 @@ DEFAULT_SUNKEN = "sunken"
 DEFAULT_RIDGE = "ridge"
 DEFAULT_BORDER_WIDTH = 2
 
-def validate(condition):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            if condition(*args, **kwargs):
-                return func(*args, **kwargs)
-            else:
-                print("Validation failed!")
-        return wrapper
-    return decorator
-
-def on_event(event_type):
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            print(f"Event '{event_type}' triggered for button '{self.text}'!")
-            return func(self, *args, **kwargs)
-        return wrapper
-    return decorator
 #---------------------------------------------------------------------------------------------------------------------------------------------
 class PyWidget:
     """Base class for all UI Widgets."""
