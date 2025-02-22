@@ -16,9 +16,12 @@ A lightweight, object-oriented GUI framework built on Tkinter with modern stylin
 - 🖱️ **Cursor Support** - 25+ cursor types for interactive elements
 - 🪟 **Window Management** - Position control, resizing, and theming
 
+---
+
 ## Example files  
 - Example_1.py
 - Example_2.py
+
 --- 
 
 # Quick Examples 
