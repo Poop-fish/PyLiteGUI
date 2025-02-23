@@ -52,7 +52,7 @@ A lightweight, object-oriented GUI framework built on Tkinter, offering modern s
 
 ---
 
-# Quick Examples
+# Basic Examples
 
 <details>
 <summary>📝 Click to expand code examples</summary>
