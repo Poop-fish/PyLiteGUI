@@ -23,32 +23,31 @@
 #                                \__\/         \__\/                           #
 #==============================================================================#
 
-
- ###### ##   ##  ######   ##### ###### ########  #####
-   ##   #######  ##  ## ### ### ##  ## ## ## ## ##   ##  
-   ##   ## # ##  ##  ## ##   ## ##  ##    ##    ##       
-   ##   ##   ##  #####  ##   ## #####     ##     #####   
-   ##   ##   ##  ##     ##   ## ##  ##    ##         ##  
-   ##   ##   ##  ##     ### ### ##  ##    ##    ##   ##  
- ###### ##   ## ####     ##### #### ###  ####    #####
+#=======================================================#
+# ___ __  __ ____   ___  ____ _____ ____                #
+# |_ _|  \/  |  _ \ / _ \|  _ \_   _/ ___|              #
+#  | || |\/| | |_) | | | | |_) || | \___ \              #
+#  | || |  | |  __/| |_| |  _ < | |  ___) |             #
+# |___|_|  |_|_|    \___/|_| \_\|_| |____/              #
+#                                                       #
+# ----------------------------------------------------- #                                                       
+#   ____ ___  _   _ ____ _____  _    _   _ _____ ____   #
+#  / ___/ _ \| \ | / ___|_   _|/ \  | \ | |_   _/ ___|  #
+# | |  | | | |  \| \___ \ | | / _ \ |  \| | | | \___ \  #
+# | |__| |_| | |\  |___) || |/ ___ \| |\  | | |  ___) | #
+#  \____\___/|_| \_|____/ |_/_/   \_\_| \_| |_| |____/  #
+#                                                       #
+#=======================================================#                  
 
 #=====================#
 #    Base imports     #
 #=====================#
 import tkinter as tk
 from tkinter import ttk
+
 from typing import Optional, Callable, Tuple, Dict, Any, List
-from ctypes import windll, byref, sizeof, c_int
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
-
- #####   ##### ###  ## ########  #####  ######  ###### ########  #####
-##   ## ### ### ### ## ## ## ## ##   ## ## ###  ### ## ## ## ## ##   ##  
-##   ## ##   ## ######    ##    ##      ##  ##  ######    ##    ##       
-##      ##   ## ## ###    ##     #####  ######  ## ###    ##     #####   
-##   ## ##   ## ##  ##    ##         ## ##  ##  ##  ##    ##         ##  
-##   ## ### ### ##  ##    ##    ##   ## ##  ##  ##  ##    ##    ##   ##  
- #####   ##### ###  ##   ####    ##### ###  ## ###  ##   ####    #####
+from ctypes import windll, byref, sizeof, c_int, c_void_p
 
 #=====================#
 # Widget Element Type #
@@ -65,6 +64,7 @@ ELEM_TYPE_CANVAS = 8
 ELEM_TYPE_LIST = 9
 ELEM_TYPE_MENU = 10
 ELEM_TYPE_SPINBOX = 11
+ELEM_TYPE_BUTTON2 = 12
 
 #====================#
 #    Layout Types    #
@@ -683,6 +683,59 @@ class Spinbox(PyWidget):
 
     def get_value(self):
         return self.Widget.get() if self.Widget else None
+    
+
+class RoundButton(PyWidget):
+    def __init__(self, text: str, key: str, on_click: Optional[Callable] = None, **kwargs):
+        super().__init__(ELEM_TYPE_BUTTON2, key=key, **kwargs)
+        self.text = text
+        self.on_click = on_click  
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = tk.Button(
+            parent,
+            text=self.text,
+            bg=self.bg,
+            fg=self.fg,
+            cursor=self.cursor,
+            font=self.font,
+            width=self.width,
+            height=self.height,
+            relief=self.Frame,  
+            borderwidth=self.BorderWidth,  
+            activebackground=self.HoverColor,
+            command=self.callback_handler
+        )
+        self.Widget.bind("<Enter>", self.on_hover)
+        self.Widget.bind("<Leave>", self.on_leave)
+        self.Widget.bind("<Configure>", self.rounded_corners)  # Bind to Configure event
+        self.apply_layout()  # Apply layout after creating the widget
+
+    def rounded_corners(self, event=None):
+        """Apply rounded corners to the button using Windows API."""
+        hwnd = self.Widget.winfo_id()
+        width = self.Widget.winfo_width()
+        height = self.Widget.winfo_height()
+        radius = 20  # Adjust the radius to control the roundness
+
+        # Create a rounded rectangle region
+        region = windll.gdi32.CreateRoundRectRgn(0, 0, width, height, radius, radius)
+        windll.user32.SetWindowRgn(hwnd, region, True)
+
+    def on_hover(self, event):
+        """Change background color on hover."""
+        self.Widget.config(bg=self.HoverColor)
+
+    def on_leave(self, event):
+        """Restore background color on leave."""
+        self.Widget.config(bg=self.bg)
+    
+    def callback_handler(self):
+        """Handles button click event."""
+        print(f"Button '{self.text}' clicked!")
+        if self.on_click:
+            self.on_click()
+
 
 ###################################################################
 #  #######  #     #  #####               ###    #######           #
