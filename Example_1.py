@@ -192,6 +192,8 @@ if __name__ == "__main__":
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
+# Example without App init of window, plus menu / list widget showcase test 
+
 def Example_2():
     # \\ Create window
     window = Window("Demo App", size=(800, 600))
