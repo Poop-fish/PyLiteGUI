@@ -44,9 +44,8 @@
 #=====================#
 import tkinter as tk
 from tkinter import ttk
-
 from typing import Optional, Callable, Tuple, Dict, Any, List
-
+import ctypes
 from ctypes import windll, byref, sizeof, c_int, c_void_p
 
 #=====================#
@@ -79,6 +78,17 @@ LAYOUT_PLACE = "place"
 DEFAULT_ELEMENT_BACKGROUND_COLOR = 'white'
 DEFAULT_ELEMENT_TEXT_COLOR = 'black'
 DEFAULT_HOVER_COLOR = 'lightgray'
+
+#============================#
+#  Default Style For PyStyle #
+#============================#
+DEFAULT_THEME = "classic"
+DEFAULT_FONT = ("Helvetica", 10)
+DEFAULT_BACKGROUND = "#868686"
+DEFAULT_FOREGROUND = "#000000"
+DEFAULT_ACCENT = "#555555"
+DEFAULT_ACTIVE = "#666666"
+DEFAULT_DISABLED = "#444444"
 
 #===========================#
 #   Default Relief Styles   #
@@ -127,7 +137,102 @@ CURSOR_SIZING_NWSE = "size_nwse"
 CURSOR_SIZING_NESW = "size_nesw"
 CURSOR_SIZING_ALL = "size_all"
 
-#-------------------------------------------- END OF CONSTANTS \ IMPORTS -------------------------------------------------------------------------------------------
+#=========================#
+# Themes Tkinter Provides #
+#=========================#
+TK_THEME_DEFAULT = 'default'  
+TK_THEME_WINNATIVE = 'winnative'
+TK_THEME_CLAM = 'clam'
+TK_THEME_ALT = 'alt'
+TK_THEME_CLASSIC = 'classic'
+TK_THEME_VISTA = 'vista'
+TK_THEME_XPNATIVE = 'xpnative'
+
+#--------------------------------------------END OF CONSTANTS \ IMPORTS-------------------------------------------------------------------------------------------------
+
+#===============#
+# Style Manager #
+#===============#
+class PyStyle:
+    """Class-based style manager for ttk widgets."""
+    def __init__(self, theme: str = DEFAULT_THEME, 
+                 font: Tuple[str, int] = DEFAULT_FONT, 
+                 background: str = DEFAULT_BACKGROUND,
+                 foreground: str = DEFAULT_ELEMENT_TEXT_COLOR,
+                 accent: str = DEFAULT_ACCENT,
+                 active: str = DEFAULT_ACTIVE,
+                 disabled: str = DEFAULT_DISABLED):
+        self.style = ttk.Style()
+        self.theme = theme
+        self.font = font
+        self.bg = background
+        self.fg = foreground
+        self.accent = accent
+        self.active = active
+        self.disabled = disabled
+        self.apply_style()
+
+    def apply_style(self):
+        """Applies the defined style to ttk widgets."""
+        self.style.theme_use(self.theme)
+        # \\ Set global styles
+        self.style.configure('.', 
+                             font=self.font,
+                             background=self.bg,
+                             foreground=self.fg)
+
+        self.style.configure('TFrame', background=self.bg)
+
+        self.style.configure('TLabel',
+                             font=(self.font[0], 12),
+                             background=self.bg,
+                             foreground=self.fg)
+
+        self.style.configure('TButton',
+                             background=self.accent,
+                             borderwidth=1,
+                             focusthickness=0,
+                             relief='flat')
+
+        self.style.map('TButton',
+                       background=[('active', self.active), 
+                                   ('disabled', self.disabled)],
+                       foreground=[('disabled', '#888888')])
+
+        self.style.configure('TCombobox',
+                             fieldbackground=self.accent,
+                             arrowsize=15)
+
+        self.style.map('TCombobox',
+                       fieldbackground=[('readonly', self.accent)],
+                       selectbackground=[('readonly', self.active)],
+                       selectforeground=[('readonly', self.fg)])
+
+        self.style.configure('TEntry',
+                             fieldbackground=self.accent)
+
+        self.style.map('TEntry',
+                       fieldbackground=[('readonly', self.accent)])
+
+        self.style.configure('TLabelframe',
+                             background=self.bg,
+                             foreground=self.fg)
+
+        self.style.configure('TLabelframe.Label',
+                             background=self.bg,
+                             foreground=self.fg)
+
+    def update_style(self, **kwargs):
+        """Update style attributes dynamically."""
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.apply_style()
+
+    def apply_to_widget(self, widget: ttk.Widget):
+        """Apply the style to a specific ttk widget."""
+        widget.configure(style=f"{widget.winfo_class()}")
+#---------------------------------------------------------------------------------------------------------------------------------------------
 
 #==========================================================================#
 #                                                                          #
@@ -149,7 +254,6 @@ CURSOR_SIZING_ALL = "size_all"
 #                                                                          #
 #==========================================================================#
 
-
 class PyWidget:
     """Base class for all UI Widgets."""
     def __init__(self, elem_type: int, key: Optional[str] = None, 
@@ -164,6 +268,7 @@ class PyWidget:
                  layout: str = LAYOUT_GRID, 
                  border_color: str = None,
                  cursor: str = CURSOR_ARROW,
+                 focus_bg=None, focus_fg=None,
                  font: Tuple[str, int, str] = DEFAULT_FONT, 
                  **layout_options):
         self.elem_type = elem_type
@@ -182,7 +287,8 @@ class PyWidget:
         self.ParentForm = None
         self.font = font 
         self.cursor = cursor   
-        
+        self.focus_bg = focus_bg  # Add these parameters
+        self.focus_fg = focus_fg        
         if len(font) == 2: # \\ Ensure the font tuple has 3 elements (family, size, style)
             font = (font[0], font[1], DEFAULT_FONT[2])  # \\ Fallback to default style
         self.font = font
@@ -227,6 +333,54 @@ class PyWidget:
     def get_value(self):
         """Returns the current value of the element."""
         return None
+    def bind_hover_events(self):
+        """Binds hover events to change background color."""
+        if self.HoverColor and self.Widget:
+            self.Widget.bind("<Enter>", self.on_hover)
+            self.Widget.bind("<Leave>", self.on_leave)
+
+    def on_hover(self, event):
+        self._original_bg = self.Widget.cget("bg")  # \\ Save original color
+        self.Widget.config(bg=self.HoverColor)
+
+    def on_leave(self, event):
+        self.Widget.config(bg=self._original_bg)
+
+    def bind_focus_events(self):
+        """Bind focus events to change styling."""
+        if self.Widget and (self.focus_bg or self.focus_fg):
+            self.Widget.bind("<FocusIn>", self.on_focus_in)
+            self.Widget.bind("<FocusOut>", self.on_focus_out)
+
+    def on_focus_in(self, event):
+        if self.focus_bg:
+            self._original_bg = self.Widget.cget("bg")
+            self.Widget.config(bg=self.focus_bg)
+        if self.focus_fg:
+            self._original_fg = self.Widget.cget("fg")
+            self.Widget.config(fg=self.focus_fg)
+
+    def on_focus_out(self, event):
+        if hasattr(self, "_original_bg"):
+            self.Widget.config(bg=self._original_bg)
+        if hasattr(self, "_original_fg"):
+            self.Widget.config(fg=self._original_fg)
+    
+    def set_highlight_colors(self, bg: str, fg: str):
+        """
+        Set the highlight colors for selected text.
+        :param bg: Background color of the selected text.
+        :param fg: Foreground (text) color of the selected text.
+        """
+        self.highlight_bg = bg
+        self.highlight_fg = fg
+        if self.Widget:
+            try:
+                # Update the highlight colors for the widget
+                self.Widget.config(selectbackground=self.highlight_bg, selectforeground=self.highlight_fg)
+            except tk.TclError:
+                # Widget does not support text selection (e.g., Button)
+                pass
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -251,15 +405,8 @@ class Button(PyWidget):
             activebackground=self.HoverColor,
             command=self.callback_handler
         )
-        self.Widget.bind("<Enter>", self.on_hover)
-        self.Widget.bind("<Leave>", self.on_leave)
-
-    def on_hover(self, event):
-        self.Widget.config(bg=self.HoverColor)
-
-    def on_leave(self, event):
-        self.Widget.config(bg=self.bg)
-    
+        self.bind_hover_events()     
+      
     def callback_handler(self):
         """Handles button click event."""
         print(f"Button '{self.text}' clicked!")
@@ -269,7 +416,7 @@ class Button(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Label(PyWidget):
-    """A label element."""
+    """label element."""
     def __init__(self, text: str, key: Optional[str] = None, **kwargs):
         super().__init__(ELEM_TYPE_TEXT, key=key, **kwargs)
         self.text = text
@@ -291,7 +438,7 @@ class Label(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Entry(PyWidget):
-    """A text input element."""
+    """text input element."""
     def __init__(self, key: str, default_text: str = "", **kwargs):
         super().__init__(ELEM_TYPE_INPUT, key=key, **kwargs)
         self.var = tk.StringVar(value=default_text)
@@ -309,14 +456,16 @@ class Entry(PyWidget):
             relief=self.Frame,  
             borderwidth=self.BorderWidth  
         )
-
+        # Set highlight colors
+        self.set_highlight_colors(bg="yellow", fg="black")  
+        self.bind_focus_events()
     def get_value(self):
         return self.var.get()
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Checkbox(PyWidget):
-    """A checkbox element."""
+    """checkbox element."""
     def __init__(self, text: str, key: str, default: bool = False, **kwargs):
         super().__init__(ELEM_TYPE_CHECKBOX, key=key, **kwargs)
         self.text = text 
@@ -344,7 +493,7 @@ class Checkbox(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Dropdown(PyWidget):
-    """A dropdown (combobox) element."""  
+    """dropdown (combobox) element."""  
     def __init__(self, key: str, options: list, default: str = None, **kwargs):
         super().__init__(ELEM_TYPE_DROPDOWN, key=key, **kwargs)
         self.var = tk.StringVar(value=default if default else options[0])
@@ -365,7 +514,7 @@ class Dropdown(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class RadioButton(PyWidget):
-    """A radio button group element."""
+    """radio button group element."""
     def __init__(self, key: str, options: list, default: str = None, **kwargs):
         super().__init__(ELEM_TYPE_RADIO, key=key, **kwargs)
         self.var = tk.StringVar(value=default if default else options[0])
@@ -397,7 +546,7 @@ class RadioButton(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Slider(PyWidget):
-    """A slider (scale) element."""  
+    """slider (scale) element."""  
     def __init__(self, key: str, min_value: int, max_value: int, default: int = 0, **kwargs):
         super().__init__(ELEM_TYPE_SLIDER, key=key, **kwargs)
         self.var = tk.IntVar(value=default)
@@ -427,7 +576,7 @@ class Slider(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Frame(PyWidget):
-    """A Frame container element."""
+    """Frame container element."""
     def __init__(self, key: Optional[str] = None, **kwargs):
         super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
 
@@ -508,19 +657,17 @@ class LabelFrame(PyWidget):
         ) 
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
-
+# TODO: Need to fix tab frame size
 class Notebook(PyWidget):
-    """A Notebook widget for creating tabbed interfaces."""
+    """Notebook widget for creating tabbed interfaces."""
     def __init__(self, key: Optional[str] = None, **kwargs):
         super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
         self.tabs = {}  # \\ Dictionary to store tabs and their associated frames
-
+    
     def create_widget(self, parent: tk.Widget):
         self.Widget = ttk.Notebook(parent)
-        # cursor=self.cursor,
-        # width=self.width,
-        # height=self.height
-
+        PyStyle(theme="clam", background="lightgray", accent="gray")
+    
     def add_tab(self, title: str, widget: PyWidget):
         """Adds a new tab to the notebook with the specified title and widget."""
         if self.Widget:
@@ -544,7 +691,7 @@ class Notebook(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class ListWidget(PyWidget):
-    """A scrollable list widget."""
+    """scrollable list widget."""
     def __init__(self, key: str, items: List[str] = None, **kwargs):
         super().__init__(ELEM_TYPE_LIST, key=key, **kwargs)
         self.items = items or []
@@ -598,7 +745,7 @@ class ListWidget(PyWidget):
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Menu(PyWidget):
-    """A menu bar or submenu."""
+    """menu bar or submenu."""
     def __init__(self, key: str, **kwargs):
         super().__init__(ELEM_TYPE_MENU, key=key, **kwargs)
         self.tk_menu = None
@@ -639,10 +786,10 @@ class Menu(PyWidget):
             raise RuntimeError("Menu not initialized. Call create_widget() first.")
         self.tk_menu.add_separator() 
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------dasd\asd-----------------------------------------------------------------------------------------
 
 class Spinbox(PyWidget):
-    """A numeric entry widget with increment/decrement buttons."""
+    """numeric entry widget with increment/decrement buttons."""
     def __init__(self, key: Optional[str] = None,
                  from_: float = 0, to: float = 100, 
                  increment: float = 1, values: list = None,
@@ -683,9 +830,10 @@ class Spinbox(PyWidget):
 
     def get_value(self):
         return self.Widget.get() if self.Widget else None
-
+    
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
+# TODO: Clean up edges 
 class RoundButton(PyWidget):
     def __init__(self, text: str, key: str, on_click: Optional[Callable] = None, **kwargs):
         super().__init__(ELEM_TYPE_BUTTON2, key=key, **kwargs)
@@ -710,14 +858,14 @@ class RoundButton(PyWidget):
         self.Widget.bind("<Enter>", self.on_hover)
         self.Widget.bind("<Leave>", self.on_leave)
         self.Widget.bind("<Configure>", self.rounded_corners)  
-        self.apply_layout()  
+        self.apply_layout() 
 
     def rounded_corners(self, event=None):
         """Apply rounded corners to the button using Windows API."""
         hwnd = self.Widget.winfo_id()
         width = self.Widget.winfo_width()
         height = self.Widget.winfo_height()
-        radius = 20  # \\ Adjust the radius to control the roundnes
+        radius = 20  # \\ Adjust the radius to control the roundness
 
         # \\ Create a rounded rectangle region
         region = windll.gdi32.CreateRoundRectRgn(0, 0, width, height, radius, radius)
@@ -737,8 +885,7 @@ class RoundButton(PyWidget):
         if self.on_click:
             self.on_click()
 
-
-###################################################################
+#=================================================================#
 #  #######  #     #  #####               ###    #######           #
 #  #        ##    #  #    #             #   #   #                 #
 #  #        # #   #  #     #           #     #  #                 #
@@ -754,26 +901,26 @@ class RoundButton(PyWidget):
 #  # # # #     #     #     #  #     #  #           #           #  #
 #  ##   ##     #     #    #    #    #  #           #     #     #  #
 #  #     #   #####   #####      #####  #######     #      #####   #
-###################################################################
+#=================================================================#
 
 
-##   ## ######  ### ## ######   #####  ##   ##
-##   ##   ##    ### ##  ## ### ### ### ##   ##  
-##   ##   ##    ######  ##  ## ##   ## ##   ##  
-##   ##   ##    ## ###  ##  ## ##   ## ##   ##  
-## # ##   ##    ##  ##  ##  ## ##   ## ## # ##  
-#######   ##    ##  ##  ## ### ### ### #######  
-##   ## ###### ###  ## ######   #####  ##   ##  
-                                                
-##   ## ######  ###  ## ######   ##### ####### ######   
-#######  ## ###  ### ##  ## ### ##   ## ##  ##  ##  ##  
-## # ##  ##  ##  ######  ##  ## ##      ##      ##  ##  
-##   ##  ######  ## ###  ###### ##  ### ####    #####   
-##   ##  ##  ##  ##  ##  ##  ## ##   ## ##      ##  ##  
-##   ##  ##  ##  ##  ##  ##  ## ##   ## ##  ##  ##  ##  
-##   ## ###  ## ###  ## ###  ##  ##### ####### #### ###
+#======================================================================#
+# ██      ██ ████ ██    ██ ████████   ███████  ██      ██              #
+# ██  ██  ██  ██  ███   ██ ██     ██ ██     ██ ██  ██  ██              #
+# ██  ██  ██  ██  ████  ██ ██     ██ ██     ██ ██  ██  ██              #
+# ██  ██  ██  ██  ██ ██ ██ ██     ██ ██     ██ ██  ██  ██              #
+# ██  ██  ██  ██  ██  ████ ██     ██ ██     ██ ██  ██  ██              #
+# ██  ██  ██  ██  ██   ███ ██     ██ ██     ██ ██  ██  ██              #
+#  ███  ███  ████ ██    ██ ████████   ███████   ███  ███               #
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
+# ██     ██    ███    ██    ██    ███     ██████   ████████ ████████   #
+# ███   ███   ██ ██   ███   ██   ██ ██   ██    ██  ██       ██     ██  #
+# ████ ████  ██   ██  ████  ██  ██   ██  ██        ██       ██     ██  #
+# ██ ███ ██ ██     ██ ██ ██ ██ ██     ██ ██   ████ ██████   ████████   #
+# ██     ██ █████████ ██  ████ █████████ ██    ██  ██       ██   ██    #
+# ██     ██ ██     ██ ██   ███ ██     ██ ██    ██  ██       ██    ██   #
+# ██     ██ ██     ██ ██    ██ ██     ██  ██████   ████████ ██     ██  #
+#======================================================================#
 
 class App:
     """
