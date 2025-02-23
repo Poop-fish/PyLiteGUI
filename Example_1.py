@@ -3,7 +3,7 @@ from PyLiteViewGUI import *
 def Example_1():
     app = App()
     window = Window("Layout Examples", size=(800, 600) , bg_color="gray", resizable=True)
-
+    
     # \\ Grid Layout Example
     grid_frame = Frame(
         key="grid_frame",
@@ -140,6 +140,8 @@ def Example_1():
         default_text="Type Here...", 
         layout=LAYOUT_PLACE, 
         key="ent1", 
+        focus_bg="lightgray",  # Background color when focused
+        focus_fg="black",  
         x=600, y=500
     )
     window.add_element(entry1)
@@ -209,45 +211,3 @@ def Example_1():
 
 if __name__ == "__main__":
     Example_1() 
-
-
-#---------------------------------------------------------------------------------------------------------------------------------------------
-
-def Example_2():
-    # \\ Create window
-    window = Window("Demo App", size=(800, 600))
-
-    # \\ Add list widget
-    my_list = ListWidget(
-        key="main_list",
-        items=["First Item", "Second Item"],
-        width=30,
-        height=15,
-        layout=LAYOUT_GRID,
-        row=0,
-        column=0,
-        padx=100,
-        pady=10
-    )
-    window.add_element(my_list)
-
-    # \\ Create and attach main menu
-    menu_bar = Menu(key="main_menu")
-    menu_bar.create_widget(window.TKroot)
-
-    # \\ File menu
-    file_menu = Menu(key="file_menu")
-    menu_bar.add_cascade("File", file_menu)
-    file_menu.add_command("Open", lambda: print("Opening..."))
-    file_menu.add_separator()
-    file_menu.add_command("Exit", window.TKroot.quit)
-
-    # \\  Edit menu
-    edit_menu = Menu(key="edit_menu")
-    menu_bar.add_cascade("Edit", edit_menu)
-    edit_menu.add_command("Copy", lambda: my_list.add_item("Copied Item"))
-
-    window.read() 
-
-# if __name__ == "__main__":
-#     Example_2() 
