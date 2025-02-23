@@ -786,7 +786,7 @@ class Menu(PyWidget):
             raise RuntimeError("Menu not initialized. Call create_widget() first.")
         self.tk_menu.add_separator() 
 
-#----------------------------------------------------dasd\asd-----------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class Spinbox(PyWidget):
     """numeric entry widget with increment/decrement buttons."""
