@@ -1,6 +1,7 @@
 NOTE: Everthing is a work in progress and i will be adding more docs as i go along in this project. 
 with thta being said. Making Projects like this helps me get better as a coder :)
 
+Windows 10/11 is required to support title bar color changes. If the feature is unavailable, the title bar will revert to the default white. (it should at lease)
 ---
 
 # PyLiteGUI
@@ -26,6 +27,23 @@ A lightweight, object-oriented GUI framework built on Tkinter with modern stylin
 
 # Quick Examples 
 
+## Window and Application Manager
+
+### Window Initialization
+```
+from PyLiteViewGUI import App, Window
+app = App()
+window = Window(
+    title="Layout Examples", 
+    size=(800, 600), 
+    bg_color="gray", 
+    resizable=True
+)
+app.run(window)
+```
+
+
+---
 ## Grid Layout Example
 
 ### Grid Frame
