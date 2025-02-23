@@ -287,8 +287,8 @@ class PyWidget:
         self.ParentForm = None
         self.font = font 
         self.cursor = cursor   
-        self.focus_bg = focus_bg  # Add these parameters
-        self.focus_fg = focus_fg        
+        self.focus_bg = focus_bg  # \\ Focus color background
+        self.focus_fg = focus_fg  # \\ Focus Text Color       
         if len(font) == 2: # \\ Ensure the font tuple has 3 elements (family, size, style)
             font = (font[0], font[1], DEFAULT_FONT[2])  # \\ Fallback to default style
         self.font = font
