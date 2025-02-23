@@ -184,15 +184,34 @@ def Example_1():
     
     spinbox = Spinbox(from_=0, to=100, increment=1,layout=LAYOUT_PLACE, x=550, y=200)
     window.add_element(spinbox)
-    # window.read() 
+
+    def on_button_click():
+        print("Button clicked!")
+
+    button = RoundButton(
+        text="Click Me",
+        key="btn1",
+        on_click=on_button_click,
+        bg="blue",
+        fg="black",
+        hover_color="red",
+        width=10,
+        height=2,
+        layout=LAYOUT_GRID,
+        row=2,
+        column=0,
+        padx=10,
+        pady=10
+    )
+    window.add_element(button)
     app.run(window) 
+
 
 if __name__ == "__main__":
     Example_1() 
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
 
-# Example without App init of window, plus menu / list widget showcase test 
+#---------------------------------------------------------------------------------------------------------------------------------------------
 
 def Example_2():
     # \\ Create window
@@ -230,5 +249,5 @@ def Example_2():
 
     window.read() 
 
-if __name__ == "__main__":
-    Example_2() 
+# if __name__ == "__main__":
+#     Example_2() 
