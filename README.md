@@ -17,6 +17,37 @@ A lightweight, object-oriented GUI framework built on Tkinter with modern stylin
 - 🖱️ **Cursor Support** - 25+ cursor types for interactive elements
 - 🪟 **Window Management** - Position control, resizing, and theming
 
+--- 
+## Widgets
+
+- PyliteGUI provides a variety of widgets, including:
+
+- Button: A clickable button with hover effects.
+
+- Label: A text label.
+
+- Entry: A text input field.
+
+- Checkbox: A checkbox for boolean inputs.
+
+- Dropdown: A dropdown menu for selecting options.
+
+- Slider: A slider for selecting values within a range.
+
+- Frame: A container for grouping widgets.
+
+- Canvas: A drawing area for shapes and images.
+
+- Notebook: A tabbed interface for organizing content.
+
+- ListWidget: A scrollable list of items.
+
+- Menu: A menu bar or submenu.
+
+- Spinbox: A numeric input with increment/decrement buttons.
+
+- RoundButton: A button with rounded corners.
+
 ---
 
 ## Example files  
@@ -29,7 +60,7 @@ A lightweight, object-oriented GUI framework built on Tkinter with modern stylin
 ## Window and Application Manager
 
 ### Window Initialization
-```
+```python
 from PyLiteViewGUI import App, Window
 app = App()
 window = Window(
@@ -46,7 +77,8 @@ app.run(window)
 ## Grid Layout Example
 
 ### Grid Frame
-```
+
+```python
 grid_frame = Frame(
     key="grid_frame",
     bg="lightgray",             
@@ -61,7 +93,7 @@ window.add_element(grid_frame)
 ```
 
 ### Label in Grid
-```
+```python
 label_grid1 = Label(
     text="Grid Label 1", 
     key="lbl_grid1", 
@@ -75,7 +107,7 @@ window.add_element(label_grid1, parent=grid_frame.Widget)
 ## Pack Layout Example
 
 ### Pack Frame
-```
+```python
 pack_frame = Frame(
     key="pack_frame",
     bg="lightgray",              
@@ -90,7 +122,7 @@ window.add_element(pack_frame)
 ```
 
 ### Labels in Pack
-```
+```python
 label_pack1 = Label(
     text="Pack Label 1", 
     key="lbl_pack1", 
@@ -102,7 +134,7 @@ label_pack1 = Label(
 window.add_element(label_pack1, parent=pack_frame.Widget)  
 ```
 
-```
+```python
 label_pack2 = Label(
     text="Pack Label 2", 
     key="lbl_pack2", 
@@ -114,7 +146,7 @@ window.add_element(label_pack2, parent=pack_frame.Widget)
 ```
 
 ### Button in Pack
-```
+```python
 button_pack = Button(
     text="Pack Button", 
     key="btn_pack",
@@ -129,7 +161,7 @@ window.add_element(button_pack, parent=pack_frame.Widget)
 ## Place Layout Example
 
 ### Place Frame
-```
+```python
 place_frame = Frame(
     key="place_frame",
     bg="lightgray",  
@@ -146,7 +178,7 @@ window.add_element(place_frame)
 ```
 
 ### Labels in Place
-```
+```python
 label_place1 = Label(
     text="Place Label 1", 
     key="lbl_place1", 
@@ -156,7 +188,7 @@ label_place1 = Label(
 window.add_element(label_place1, parent=place_frame.Widget)  
 ```
 
-```
+```python
 label_place2 = Label(
     text="Place Label 2", 
     key="lbl_place2", 
@@ -167,7 +199,7 @@ window.add_element(label_place2, parent=place_frame.Widget)
 ```
 
 ### Button in Place
-```
+```python
 button_place = Button(
     text="Place Button", 
     key="btn_place", 
@@ -178,7 +210,7 @@ window.add_element(button_place)
 ```
 
 ### Other Widgets
-```
+```python
 Checkbox1 = Checkbox (
     text="test", 
     key="chk1", 
@@ -188,7 +220,7 @@ Checkbox1 = Checkbox (
 window.add_element(Checkbox1)
 ```
 
-```
+```python
 entry1 = Entry(
     default_text="Type Here...", 
     layout=LAYOUT_PLACE, 
@@ -198,7 +230,7 @@ entry1 = Entry(
 window.add_element(entry1)
 ```
 
-```
+```python
 dropdown1 = Dropdown(
     key="drop1",
     options=[1,2,3,4], 
@@ -209,7 +241,7 @@ dropdown1 = Dropdown(
 window.add_element(dropdown1)
 ```
 
-```
+```python
 RadioButton1 = RadioButton(
     key="rad1", 
     options=["Test"]
@@ -217,7 +249,7 @@ RadioButton1 = RadioButton(
 window.add_element(RadioButton1)
 ```
 
-```
+```python
 slider1 = Slider(
     key="sld1", 
     min_value=1, max_value=100, 
@@ -229,7 +261,7 @@ window.add_element(slider1)
 ```
 
 ## Label Frame Example
-```
+```python
 label_frame = LabelFrame(
     text="Group of Widgets", 
     key="group_frame", 
@@ -239,14 +271,10 @@ label_frame = LabelFrame(
 window.add_element(label_frame)
 ```
 
-```
+```python
 button_inside_frame = Button(
     text="Click Me", 
     key="button1"
 )
 window.add_element(button_inside_frame, parent=label_frame.Widget)
 ```
-
-
-
-
