@@ -47,7 +47,7 @@ PyLiteGUI offers a variety of widgets, including:
 
 ---
 
-# Quick Examples
+# Basic Examples
 
 ## Window and Application Manager
 
