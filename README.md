@@ -1,7 +1,7 @@
 NOTE: Everthing is a work in progress and i will be adding more docs as i go along in this project. 
-with thta being said. Making Projects like this helps me get better as a coder :)
-
+with thta being said. Making Projects like this helps me get better as a coder.
 Windows 10/11 is required to support title bar color changes. If the feature is unavailable, the title bar will revert to the default white. (it should at lease)
+
 ---
 
 # PyLiteGUI
