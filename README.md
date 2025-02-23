@@ -21,7 +21,6 @@ A lightweight, object-oriented GUI framework built on Tkinter with modern stylin
 
 ## Example files  
 - Example_1.py
-- Example_2.py
 
 --- 
 
