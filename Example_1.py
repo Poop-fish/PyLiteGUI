@@ -140,7 +140,7 @@ def Example_1():
         default_text="Type Here...", 
         layout=LAYOUT_PLACE, 
         key="ent1", 
-        focus_bg="lightgray",  # Background color when focused
+        focus_bg="lightgray",  # \\ Background color when focused
         focus_fg="black",  
         x=600, y=500
     )
@@ -194,7 +194,9 @@ def Example_1():
         text="Click Me",
         key="btn1",
         on_click=on_button_click,
-        bg="blue",
+        bg="white",
+        frame="raised",
+        border_width =10,
         fg="black",
         hover_color="red",
         width=10,
