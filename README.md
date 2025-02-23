@@ -18,26 +18,25 @@ A lightweight, object-oriented GUI framework built on Tkinter, offering modern s
 - 📐 **Flexible Layouts** - Grid, Pack, and Place layout managers
 - 🖱️ **Cursor Support** - Over 25 cursor types for interactive elements
 - 🪟 **Window Management** - Provides control over position, resizing, and theming
-
 ---
 
 ## Available Widgets
 
-PyLiteGUI offers a variety of widgets, including:
-
-- **Button** - Clickable button with hover effects
-- **Label** - Text display element
-- **Entry** - Text input field
-- **Checkbox** - Boolean input toggle
-- **Dropdown** - Selectable options menu
-- **Slider** - Value selection within a range
-- **Frame** - Container for grouping widgets
-- **Canvas** - Drawing area for shapes and images
-- **Notebook** - Tabbed interface for organizing content
-- **ListWidget** - Scrollable list of items
-- **Menu** - Menu bar or submenu
-- **Spinbox** - Numeric input with increment/decrement buttons
-- **RoundButton** - Button with rounded corners
+| Widget      | Description                                      |
+|------------|--------------------------------------------------|
+| **Button** | Clickable button with hover effects             |
+| **Label**  | Text display element                            |
+| **Entry**  | Text input field                                |
+| **Checkbox** | Boolean input toggle                         |
+| **Dropdown** | Selectable options menu                      |
+| **Slider** | Value selection within a range                 |
+| **Frame**  | Container for grouping widgets                 |
+| **Canvas** | Drawing area for shapes and images             |
+| **Notebook** | Tabbed interface for organizing content      |
+| **ListWidget** | Scrollable list of items                   |
+| **Menu**   | Menu bar or submenu                            |
+| **Spinbox** | Numeric input with increment/decrement buttons |
+| **RoundButton** | Button with rounded corners               |
 
 ---
 
