@@ -708,17 +708,17 @@ class RoundButton(PyWidget):
         )
         self.Widget.bind("<Enter>", self.on_hover)
         self.Widget.bind("<Leave>", self.on_leave)
-        self.Widget.bind("<Configure>", self.rounded_corners)  # Bind to Configure event
-        self.apply_layout()  # Apply layout after creating the widget
+        self.Widget.bind("<Configure>", self.rounded_corners)  
+        self.apply_layout()  
 
     def rounded_corners(self, event=None):
         """Apply rounded corners to the button using Windows API."""
         hwnd = self.Widget.winfo_id()
         width = self.Widget.winfo_width()
         height = self.Widget.winfo_height()
-        radius = 20  # Adjust the radius to control the roundness
+        radius = 20  # \\ Adjust the radius to control the roundnes
 
-        # Create a rounded rectangle region
+        # \\ Create a rounded rectangle region
         region = windll.gdi32.CreateRoundRectRgn(0, 0, width, height, radius, radius)
         windll.user32.SetWindowRgn(hwnd, region, True)
 
