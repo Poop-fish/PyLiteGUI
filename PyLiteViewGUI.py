@@ -69,7 +69,7 @@ ELEM_TYPE_SPINBOX = 11
 ELEM_TYPE_BUTTON2 = 12 
 ELEM_TYPE_TEXT = 13
 ELEM_TYPE_TOPLEVEL = 14
-ELEM_TYPE_DROPDOWN = 15
+ELEM_TYPE_OPTIONMENU = 15
 #====================#
 #    Layout Types    #
 #====================#
@@ -1284,7 +1284,7 @@ class OptionMenu(PyWidget):
         :param default: The default selected option. If None, the first option is selected.
         :param kwargs: Additional keyword arguments for PyWidget.
         """
-        super().__init__(elem_type=15, key=key, **kwargs)  
+        super().__init__(ELEM_TYPE_OPTIONMENU, key=key, **kwargs)  
         self.options = options
         self.var = tk.StringVar(value=default if default else options[0])
         self.menu = None 
