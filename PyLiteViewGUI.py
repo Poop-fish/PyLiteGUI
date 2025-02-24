@@ -69,7 +69,7 @@ ELEM_TYPE_SPINBOX = 11
 ELEM_TYPE_BUTTON2 = 12 
 ELEM_TYPE_TEXT = 13
 ELEM_TYPE_TOPLEVEL = 14
-
+ELEM_TYPE_DROPDOWN = 15
 #====================#
 #    Layout Types    #
 #====================#
@@ -165,7 +165,7 @@ class Variable:
     and tracked. It supports basic operations like setting, getting, and tracing
     changes to the value.
     """
-    _default = None  # Default value for the variable
+    _default = None  # \\ Default value for the variable
 
     def __init__(self, value=None):
         """Initialize the variable with an optional initial value.
@@ -173,7 +173,7 @@ class Variable:
             value: The initial value of the variable. Defaults to None.
         """
         self._value = value if value is not None else self._default
-        self._callbacks = []  # List of callback functions to call on value changes
+        self._callbacks = []  # \\ List of callback functions to call on value changes
 
     def set(self, value):
         """Set the value of the variable.
@@ -182,7 +182,7 @@ class Variable:
         """
         if self._value != value:
             self._value = value
-            self._notify_callbacks()  # Notify all registered callbacks
+            self._notify_callbacks()  # \\ Notify all registered callbacks
 
     def get(self):
         """Get the current value of the variable.
@@ -273,6 +273,7 @@ class BooleanVar(Variable):
 #===============#
 # Style Manager #
 #===============#
+
 class PyStyle:
     """Class-based style manager for ttk widgets."""
     def __init__(self, theme: str = DEFAULT_THEME, 
@@ -287,7 +288,7 @@ class PyStyle:
         self.font = font
         self.bg = background
         self.fg = foreground
-        self.accent = accent
+        self.accent = accent  
         self.active = active
         self.disabled = disabled
         self.apply_style()
@@ -298,21 +299,27 @@ class PyStyle:
         # \\ Set global styles
         self.style.configure('.', 
                              font=self.font,
+                             relief=DEFAULT_RAISED,
                              background=self.bg,
                              foreground=self.fg)
 
-        self.style.configure('TFrame', background=self.bg)
+        self.style.configure('TFrame',
+                             background=self.bg,
+                             relief=DEFAULT_RAISED,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
         self.style.configure('TLabel',
                              font=(self.font[0], 12),
                              background=self.bg,
-                             foreground=self.fg)
+                             foreground=self.fg,
+                             relief=DEFAULT_FLAT,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
         self.style.configure('TButton',
                              background=self.accent,
-                             borderwidth=1,
+                             borderwidth=DEFAULT_BORDER_WIDTH,  
                              focusthickness=0,
-                             relief='flat')
+                             relief=DEFAULT_RAISED)  
 
         self.style.map('TButton',
                        background=[('active', self.active), 
@@ -321,7 +328,9 @@ class PyStyle:
 
         self.style.configure('TCombobox',
                              fieldbackground=self.accent,
-                             arrowsize=15)
+                             arrowsize=15,
+                             relief=DEFAULT_SUNKEN,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
         self.style.map('TCombobox',
                        fieldbackground=[('readonly', self.accent)],
@@ -329,18 +338,24 @@ class PyStyle:
                        selectforeground=[('readonly', self.fg)])
 
         self.style.configure('TEntry',
-                             fieldbackground=self.accent)
+                             fieldbackground=self.accent,
+                             relief=DEFAULT_SUNKEN,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
         self.style.map('TEntry',
                        fieldbackground=[('readonly', self.accent)])
 
         self.style.configure('TLabelframe',
                              background=self.bg,
-                             foreground=self.fg)
+                             foreground=self.fg,
+                             relief=DEFAULT_GROOVE,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
         self.style.configure('TLabelframe.Label',
                              background=self.bg,
-                             foreground=self.fg)
+                             foreground=self.fg,
+                             relief=DEFAULT_FLAT,  
+                             borderwidth=DEFAULT_BORDER_WIDTH)  
 
     def update_style(self, **kwargs):
         """Update style attributes dynamically."""
@@ -352,6 +367,7 @@ class PyStyle:
     def apply_to_widget(self, widget: ttk.Widget):
         """Apply the style to a specific ttk widget."""
         widget.configure(style=f"{widget.winfo_class()}")
+
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 #==========================================================================#
@@ -389,6 +405,7 @@ class PyWidget:
                  border_color: str = None,
                  cursor: str = CURSOR_ARROW,
                  focus_bg=None, focus_fg=None,
+                 enable_hover: bool = True,  # \\ New parameter
                  font: Tuple[str, int, str] = DEFAULT_FONT, 
                  **layout_options):
         self.elem_type = elem_type
@@ -410,6 +427,8 @@ class PyWidget:
         self.focus_bg = focus_bg  
         self.focus_fg = focus_fg        
         self.tooltip = None  #
+        self.hover_enable = enable_hover
+        
         if len(font) == 2: # \\ Ensure the font tuple has 3 elements (family, size, style)
             font = (font[0], font[1], DEFAULT_FONT[2])  # \\ Fallback to default style
         self.font = font
@@ -473,9 +492,10 @@ class PyWidget:
     def get_value(self):
         """Returns the current value of the element."""
         return None
+    
     def bind_hover_events(self):
         """Binds hover events to change background color."""
-        if self.HoverColor and self.Widget:
+        if self.HoverColor and self.Widget and self.hover_enable:  # \\ Check hover_enabled
             self.Widget.bind("<Enter>", self.on_hover)
             self.Widget.bind("<Leave>", self.on_leave)
 
@@ -486,6 +506,18 @@ class PyWidget:
     def on_leave(self, event):
         self.Widget.config(bg=self._original_bg)
 
+    def enable_hover(self, enable: bool):
+        """
+        Enable or disable the hover effect.
+        :param enable: True to enable hover, False to disable.
+        """
+        self.hover_enabled = enable
+        if enable:
+            self.bind_hover_events()
+        else:
+            if self.Widget:
+                self.Widget.unbind("<Enter>")
+                self.Widget.unbind("<Leave>")
     def bind_focus_events(self):
         """Bind focus events to change styling."""
         if self.Widget and (self.focus_bg or self.focus_fg):
@@ -656,6 +688,7 @@ class Button(PyWidget):
             activebackground=self.HoverColor,
             command=self.callback_handler
         )
+        
         self.bind_hover_events()     
       
     def callback_handler(self):
@@ -692,16 +725,24 @@ class Label(PyWidget):
             relief=self.Frame, 
             borderwidth=self.BorderWidth 
         )
-
+        self.bind_hover_events() 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Entry(PyWidget):
-    """text input element."""
-    def __init__(self, key: str, default_text: str = "", **kwargs):
+    """Text input element with validation."""
+
+    def __init__(self, key: str, default_text: str = "", validate_func=None, **kwargs):
         super().__init__(ELEM_TYPE_INPUT, key=key, **kwargs)
         self.var = tk.StringVar(value=default_text)
+        self.validate_func = validate_func
 
     def create_widget(self, parent: tk.Widget):
+        # \\ Set up the validate command if a validation function is provided
+        if self.validate_func:
+            vcmd = (parent.register(self.validate_func), '%P')  # \\ '%P' represents the new value
+        else:
+            vcmd = None
+
         self.Widget = tk.Entry(
             parent, 
             textvariable=self.var, 
@@ -712,13 +753,22 @@ class Entry(PyWidget):
             font=self.font,
             cursor=self.cursor,
             relief=self.Frame,  
-            borderwidth=self.BorderWidth  
+            borderwidth=self.BorderWidth,  
+            validate='key',  # \\ Trigger validation on each keypress
+            validatecommand=vcmd  # \\ Set the validation command
         )
-        # Set highlight colors
+        
         self.set_highlight_colors(bg="yellow", fg="black")  
         self.bind_focus_events()
+        self.bind_hover_events()  
+
     def get_value(self):
         return self.var.get()
+
+    # \\ Example validation function: Allow only alphanumeric characters \\ TODO: Need to add more validation methods 
+    @staticmethod
+    def alphanumeric_validation(value):
+        return value.isalnum()  
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -744,30 +794,10 @@ class Checkbox(PyWidget):
             borderwidth=self.BorderWidth,  
             activebackground=self.HoverColor
         )
-
+        self.bind_hover_events() 
     def get_value(self):
         return self.var.get()
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
-
-class Dropdown(PyWidget):
-    """dropdown (combobox) element."""  
-    def __init__(self, key: str, options: list, default: str = None, **kwargs):
-        super().__init__(ELEM_TYPE_DROPDOWN, key=key, **kwargs)
-        self.var = tk.StringVar(value=default if default else options[0])
-        self.options = options
-
-    def create_widget(self, parent: tk.Widget):
-        self.Widget = ttk.Combobox(
-            parent, textvariable=self.var, 
-            values=self.options,
-            cursor=self.cursor,
-            font=self.font, 
-            state="readonly"
-        )
-
-    def get_value(self):
-        return self.var.get()
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -797,7 +827,7 @@ class RadioButton(PyWidget):
                 activebackground=self.HoverColor
             )
             rb.pack(anchor="w")
-
+            self.bind_hover_events() 
     def get_value(self):
         return self.var.get()
 
@@ -827,7 +857,7 @@ class Slider(PyWidget):
             relief=self.Frame,  
             borderwidth=self.BorderWidth  
         )
-
+        self.bind_hover_events() 
     def get_value(self):
         return self.var.get() 
     
@@ -895,56 +925,6 @@ class Canvas(PyWidget):
             self.Widget.delete("all") 
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
-
-# TODO : Fix font not working 
-class LabelFrame(PyWidget):
-    def __init__(self, text: str, key: Optional[str] = None, **kwargs):
-        super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
-        self.text = text  # \\ The label text for the frame
-
-    def create_widget(self, parent: tk.Widget):
-        self.Widget = ttk.LabelFrame(
-            parent,
-            width=self.width,
-            height=self.height,
-            text=self.text,
-            cursor=self.cursor,
-            # font=self.font,
-            relief=self.Frame,
-            borderwidth=self.BorderWidth
-        ) 
-
-#---------------------------------------------------------------------------------------------------------------------------------------------
-# TODO: Need to fix tab frame size
-class Notebook(PyWidget):
-    """Notebook widget for creating tabbed interfaces."""
-    def __init__(self, key: Optional[str] = None, **kwargs):
-        super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
-        self.tabs = {}  # \\ Dictionary to store tabs and their associated frames
-    
-    def create_widget(self, parent: tk.Widget):
-        self.Widget = ttk.Notebook(parent)
-        PyStyle(theme="clam", background="lightgray", accent="gray")
-    
-    def add_tab(self, title: str, widget: PyWidget):
-        """Adds a new tab to the notebook with the specified title and widget."""
-        if self.Widget:
-            tab_frame = tk.Frame(self.Widget, bg=self.bg)
-            tab_frame.pack(expand=True, fill="both")
-            widget.create_widget(tab_frame)
-            widget.apply_layout()
-            self.Widget.add(tab_frame, text=title)
-            self.tabs[title] = widget 
-
-    def get_tab(self, title: str) -> Optional[PyWidget]:
-        """Returns the widget associated with the specified tab title."""
-        return self.tabs.get(title)
-
-    def remove_tab(self, title: str):
-        """Removes the tab with the specified title."""
-        if self.Widget and title in self.tabs:
-            self.Widget.forget(self.tabs[title].Widget.master)  
-            del self.tabs[title]  
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1072,6 +1052,8 @@ class Spinbox(PyWidget):
             wrap=self.wrap
         )
         
+        self.bind_hover_events() 
+        
         if self.values:
             self.Widget.configure(values=self.values)
         else:
@@ -1113,8 +1095,8 @@ class RoundButton(PyWidget):
             activebackground=self.HoverColor,
             command=self.callback_handler
         )
-        self.Widget.bind("<Enter>", self.on_hover)
-        self.Widget.bind("<Leave>", self.on_leave)
+        
+        self.bind_hover_events()  
         self.Widget.bind("<Configure>", self.rounded_corners)  
         self.apply_layout() 
 
@@ -1129,21 +1111,13 @@ class RoundButton(PyWidget):
         region = windll.gdi32.CreateRoundRectRgn(0, 0, width, height, radius, radius)
         windll.user32.SetWindowRgn(hwnd, region, True)
 
-    def on_hover(self, event):
-        """Change background color on hover."""
-        self.Widget.config(bg=self.HoverColor)
-
-    def on_leave(self, event):
-        """Restore background color on leave."""
-        self.Widget.config(bg=self.bg)
-    
     def callback_handler(self):
         """Handles button click event."""
         print(f"Button '{self.text}' clicked!")
         if self.on_click:
             self.on_click()
-
-
+ 
+#---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Text(PyWidget):
     """Multi-line text input element."""
@@ -1163,8 +1137,9 @@ class Text(PyWidget):
             relief=self.Frame,
             borderwidth=self.BorderWidth
         )
+        
         self.Widget.insert(tk.END, self.default_text)
-        self.set_highlight_colors(bg="yellow", fg="black")  # Set highlight colors
+        self.set_highlight_colors(bg="yellow", fg="black")  # \\ Set highlight colors
         self.bind_focus_events()
 
     def get_value(self):
@@ -1172,21 +1147,326 @@ class Text(PyWidget):
     
 
 class TopLevel(PyWidget):
-    """A new window that can contain other widgets."""
-    def __init__(self, title: str, key: Optional[str] = None, **kwargs):
+    """An advanced top-level window that can contain other widgets with enhanced configuration."""
+    def __init__(self, title: str, key: Optional[str] = None, width: int = 300, height: int = 200,
+                 background: str = "lightgray", modal: bool = False, resizable: Tuple[bool, bool] = (True, True),
+                 center: bool = True, **kwargs):
+        """
+        Initialize a TopLevel window.
+        Args:
+            title (str): Window title.
+            key (Optional[str]): Unique identifier for the widget.
+            width (int): Initial window width in pixels (default: 300).
+            height (int): Initial window height in pixels (default: 200).
+            background (str): Background color of the window (default: "lightgray").
+            modal (bool): If True, makes the window modal (blocks parent window, default: False).
+            resizable (Tuple[bool, bool]): (width, height) resizability (default: (True, True)).
+            center (bool): If True, centers the window on the screen (default: True).
+            **kwargs: Additional arguments passed to the PyWidget base class.
+        """
         super().__init__(ELEM_TYPE_TOPLEVEL, key=key, **kwargs)
         self.title = title
+        self.width = width
+        self.height = height
+        self.bg = background
+        self.modal = modal
+        self.resizable = resizable
+        self.center = center
+        self.widgets: List[PyWidget] = [] 
 
-    def create_widget(self, parent: tk.Widget):
+    def create_widget(self, parent: tk.Widget) -> None:
+        """Create the Toplevel widget and apply initial configuration."""
         self.Widget = tk.Toplevel(parent)
         self.Widget.title(self.title)
-        self.Widget.geometry(f"{self.width}x{self.height}") if self.width and self.height else None
-        self.Widget.configure(bg=self.bg)
 
-    def add_widget(self, widget: PyWidget):
-        """Add a widget to the TopLevel window."""
+        geometry_str = f"{self.width}x{self.height}"
+        if self.center:
+            self._center_window(geometry_str)
+        else:
+            self.Widget.geometry(geometry_str)
+        
+        self.Widget.configure(bg=self.bg)
+        self.Widget.resizable(*self.resizable)
+        if self.modal:
+            self.Widget.transient(parent)  
+            self.Widget.grab_set() 
+
+    def _center_window(self, geometry_str: str) -> None:
+        """Center the window on the screen based on its geometry."""
+        self.Widget.update_idletasks() 
+        screen_width = self.Widget.winfo_screenwidth()
+        screen_height = self.Widget.winfo_screenheight()
+        x = (screen_width - self.width) // 2
+        y = (screen_height - self.height) // 2
+        self.Widget.geometry(f"{geometry_str}+{x}+{y}")
+
+    def add_widget(self, widget: PyWidget, layout: str = "pack", padx: int = 10, pady: int = 10,
+                   row: Optional[int] = None, column: Optional[int] = None) -> None:
+        """
+        Add a widget to the TopLevel window with layout options.
+        Args:
+            widget (PyWidget): The widget to add.
+            layout (str): Layout manager ("pack" or "grid", default: "pack").
+            padx (int): Horizontal padding around the widget (default: 10).
+            pady (int): Vertical padding around the widget (default: 10).
+            row (Optional[int]): Grid row (required if layout="grid").
+            column (Optional[int]): Grid column (required if layout="grid").
+        Raises:
+            ValueError: If layout is invalid or grid parameters are missing when needed.
+        """
+        if not self.Widget:
+            return
+        
         widget.create_widget(self.Widget)
+        
+        if layout == "pack":
+            widget.Widget.pack(expand=True, fill="both", padx=padx, pady=pady)
+        elif layout == "grid":
+            if row is None or column is None:
+                raise ValueError("Row and column must be specified for grid layout.")
+            widget.Widget.grid(row=row, column=column, sticky="nsew", padx=padx, pady=pady)
+            self.Widget.grid_rowconfigure(row, weight=1)
+            self.Widget.grid_columnconfigure(column, weight=1)
+        else:
+            raise ValueError(f"Unsupported layout manager: {layout}. Use 'pack' or 'grid'.")
+        
         widget.apply_layout()
+        self.widgets.append(widget)
+
+    def set_title(self, title: str) -> None:
+        """Dynamically update the window title."""
+        self.title = title
+        if self.Widget:
+            self.Widget.title(title)
+
+    def set_geometry(self, width: int, height: int, center: bool = None) -> None:
+        """Dynamically update the window size and optionally re-center it."""
+        self.width = width
+        self.height = height
+        if self.Widget:
+            geometry_str = f"{width}x{height}"
+            if center if center is not None else self.center:
+                self._center_window(geometry_str)
+            else:
+                self.Widget.geometry(geometry_str)
+
+    def toggle_fullscreen(self) -> None:
+        """Toggle fullscreen mode."""
+        if self.Widget:
+            current_state = self.Widget.attributes("-fullscreen")
+            self.Widget.attributes("-fullscreen", not current_state)
+
+    def minimize(self) -> None:
+        """Minimize the window."""
+        if self.Widget:
+            self.Widget.iconify()
+
+    def maximize(self) -> None:
+        """Maximize the window (non-fullscreen)."""
+        if self.Widget:
+            self.Widget.state("zoomed")
+
+    def close(self) -> None:
+        """Close the window."""
+        if self.Widget:
+            self.Widget.destroy()
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class OptionMenu(PyWidget):
+    """Dropdown (combobox) element using tk.OptionMenu."""
+
+    def __init__(self, key: str, options: List[str], default: Optional[str] = None, **kwargs):
+        """
+        Initialize the Dropdown widget.
+        :param key: A unique identifier for the widget.
+        :param options: A list of options for the dropdown.
+        :param default: The default selected option. If None, the first option is selected.
+        :param kwargs: Additional keyword arguments for PyWidget.
+        """
+        super().__init__(elem_type=15, key=key, **kwargs)  
+        self.options = options
+        self.var = tk.StringVar(value=default if default else options[0])
+        self.menu = None 
+
+    def create_widget(self, parent: tk.Widget):
+        """Create the tk.OptionMenu widget."""
+        self.Widget = tk.OptionMenu(
+            parent,
+            self.var,
+            *self.options
+        )
+        self.apply_styling()  
+        self.apply_layout()    
+
+    def apply_styling(self):
+        """Apply styling to the OptionMenu widget and its associated menu."""
+        if self.Widget:
+            self.Widget.config(
+                bg=self.bg,
+                fg=self.fg,
+                font=self.font,
+                cursor=self.cursor,
+                highlightbackground=self.HoverColor if self.HoverColor else self.bg,
+                highlightthickness=self.BorderWidth,
+                activebackground=self.HoverColor,
+                relief=self.Frame
+            )
+
+            self.menu = self.Widget["menu"]
+            self.menu.config(
+                bg=self.bg,
+                fg=self.fg,
+                font=self.font,
+                activebackground=self.HoverColor,
+                activeforeground=self.fg,
+                relief=self.Frame,
+                borderwidth=self.BorderWidth
+            )
+
+            if self.hover_enable:
+                self.bind_hover_events()
+
+            if self.focus_bg or self.focus_fg:
+                self.bind_focus_events()
+
+    def get_value(self):
+        """Get the currently selected value from the dropdown."""
+        return self.var.get()
+
+    def set_value(self, value: str):
+        """Set the value of the dropdown."""
+        if value in self.options:
+            self.var.set(value)
+        else:
+            raise ValueError(f"Value '{value}' is not in the options list.")
+
+
+#-------------------------------------------------TTK WIDGETS-----------------------------------------------------------------------------------------
+class Notebook(PyWidget):
+    """A widget for creating advanced tabbed interfaces using ttk.Notebook."""
+    
+    def __init__(self, key: Optional[str] = None, background: str = "lightgray", 
+                 tab_padding: tuple[int, int] = (10, 10), **kwargs):
+        """
+        Initialize the Notebook widget.
+
+        Args:
+            key (Optional[str]): Unique identifier for the widget.
+            background (str): Background color for tab frames (default: "lightgray").
+            tab_padding (tuple[int, int]): Padding (x, y) around widgets in tabs (default: (10, 10)).
+            **kwargs: Additional arguments passed to the PyWidget base class.
+        """
+        super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
+        self.tabs: Dict[str, PyWidget] = {}  # Store tab titles and their widgets
+        self.bg = background
+        self.tab_padding = tab_padding
+
+    def create_widget(self, parent: tk.Widget) -> None:
+        """Create the ttk.Notebook widget and apply styling."""
+        self.Widget = ttk.Notebook(parent)
+        # Apply style with a modern theme
+        PyStyle(theme="clam", background=self.bg, accent="gray")
+        # Ensure the notebook itself is packed by the base class (assumed)
+    
+    def add_tab(self, title: str, widget: PyWidget, layout: str = "pack", 
+                padx: Optional[int] = None, pady: Optional[int] = None) -> None:
+        """
+        Add a new tab to the notebook with the specified title and widget.
+
+        Args:
+            title (str): Title of the tab.
+            widget (PyWidget): Widget to place inside the tab.
+            layout (str): Layout manager for the widget ("pack" or "grid", default: "pack").
+            padx (Optional[int]): Horizontal padding override.
+            pady (Optional[int]): Vertical padding override.
+        
+        Raises:
+            ValueError: If an invalid layout manager is specified.
+        """
+        if not self.Widget:
+            return
+        
+        # Create a frame for the tab content
+        tab_frame = tk.Frame(self.Widget, bg=self.bg)
+        tab_frame.pack(expand=True, fill="both")  # Frame fills the tab area
+        
+        # Create the widget inside the tab frame
+        widget.create_widget(tab_frame)
+        
+        # Apply padding (use provided values or default)
+        padx = padx if padx is not None else self.tab_padding[0]
+        pady = pady if pady is not None else self.tab_padding[1]
+        
+        # Position the widget within the tab frame
+        if layout == "pack":
+            widget.Widget.pack(expand=True, fill="both", padx=padx, pady=pady)
+        elif layout == "grid":
+            widget.Widget.grid(row=0, column=0, sticky="nsew", padx=padx, pady=pady)
+            tab_frame.grid_rowconfigure(0, weight=1)
+            tab_frame.grid_columnconfigure(0, weight=1)
+        else:
+            raise ValueError(f"Unsupported layout manager: {layout}. Use 'pack' or 'grid'.")
+        
+        # Apply the widget's internal layout
+        widget.apply_layout()
+        
+        # Add the frame to the notebook as a tab
+        self.Widget.add(tab_frame, text=title)
+        self.tabs[title] = widget
+
+    def get_tab(self, title: str) -> Optional[PyWidget]:
+        """Retrieve the widget associated with the specified tab title."""
+        return self.tabs.get(title)
+
+    def remove_tab(self, title: str) -> None:
+        """Remove the tab with the specified title."""
+        if self.Widget and title in self.tabs:
+            self.Widget.forget(self.tabs[title].Widget.master)  # Remove tab from notebook
+            del self.tabs[title]
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+# TODO : Fix font not working 
+class LabelFrame(PyWidget):
+    def __init__(self, text: str, key: Optional[str] = None, **kwargs):
+        super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
+        self.text = text  # \\ The label text for the frame
+        PyStyle(theme="clam", background="lightgray", accent="gray")
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.LabelFrame(
+            parent,
+            width=self.width,
+            height=self.height,
+            text=self.text,
+            cursor=self.cursor,
+            # font=self.font,
+            relief=self.Frame,
+            borderwidth=self.BorderWidth
+        ) 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class Dropdown(PyWidget):
+    """dropdown (combobox) element."""  
+    def __init__(self, key: str, options: list, default: str = None, **kwargs):
+        super().__init__(ELEM_TYPE_DROPDOWN, key=key, **kwargs)
+        self.var = tk.StringVar(value=default if default else options[0])
+        self.options = options
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Combobox(
+            parent, textvariable=self.var, 
+            values=self.options,
+            cursor=self.cursor,
+            font=self.font, 
+            state="readonly"
+        )
+
+    def get_value(self):
+        return self.var.get()
+    
 
 #=================================================================#
 #  #######  #     #  #####               ###    #######           #
@@ -1471,16 +1751,16 @@ class Window:
         if position is not None:
             self.set_position(position)
 
-        # Disable resizing if resizable is False
+        # \\ Disable resizing if resizable is False
         self.TKroot.resizable(resizable, resizable)
 
     def _set_title_bar_gray(self):
         """Uses Windows API to set the title bar color to gray."""
         try:
-            hwnd = windll.user32.GetParent(self.TKroot.winfo_id())  # Get window handle
-            DWMWA_CAPTION_COLOR = 35  # Windows 11+
-            GRAY_COLOR = 0x808080  # RGB(128, 128, 128) → Dark Gray
-            # Apply title bar color
+            hwnd = windll.user32.GetParent(self.TKroot.winfo_id())  # \\ Get window handle
+            DWMWA_CAPTION_COLOR = 35  # \\ Windows 11+
+            GRAY_COLOR = 0x808080  # \\ RGB(128, 128, 128) → Dark Gray
+            # \\ Apply title bar color
             windll.dwmapi.DwmSetWindowAttribute(
                 hwnd, DWMWA_CAPTION_COLOR, byref(c_int(GRAY_COLOR)), sizeof(c_int)
             )
