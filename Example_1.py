@@ -2,8 +2,11 @@ from PyLiteViewGUI import *
 
 def Example_1():
     app = App()
-    window = Window("Layout Examples", size=(800, 600) , bg_color="gray", resizable=True)
-    
+    # window = Window("Layout Examples", size=(800, 600) , bg_color="gray", resizable=True)
+    window = Window("Layout Examples")
+    window.wm.geometry("800x600")
+    window.wm.configure(bg="darkgray")  
+     
     # \\ Grid Layout Example
     grid_frame = Frame(
         key="grid_frame",
@@ -127,7 +130,8 @@ def Example_1():
         x=300, y=300
     )
     window.add_element(button_place)  
-
+    button_place.set_tooltip("test tool tip text :)") 
+    
     Checkbox1 = Checkbox (
         text="test", 
         key="chk1", 
@@ -140,7 +144,7 @@ def Example_1():
         default_text="Type Here...", 
         layout=LAYOUT_PLACE, 
         key="ent1", 
-        focus_bg="lightgray",  # \\ Background color when focused
+        focus_bg="lightgray", 
         focus_fg="black",  
         x=600, y=500
     )
@@ -160,7 +164,8 @@ def Example_1():
         options=["Test"]
     )
     window.add_element(RadioButton1)
-
+    
+    RadioButton1.set_tooltip("This is a Radio Button") 
     slider1 = Slider(
         key="sld1", 
         min_value=1, max_value=100, 
@@ -176,6 +181,7 @@ def Example_1():
         layout=LAYOUT_PLACE, 
         x=550, y=400
     )
+    
     window.add_element(label_frame)
 
     button_inside_frame = Button(
@@ -201,15 +207,26 @@ def Example_1():
         hover_color="red",
         width=10,
         height=2,
-        layout=LAYOUT_GRID,
-        row=2,
-        column=0,
-        padx=10,
-        pady=10
+        enable_hover= False
+        
     )
     window.add_element(button)
-    app.run(window) 
+    button.set_margins(20,20)
+    button.enable_drag()    
+    
+    optionMenu1 = OptionMenu(       
+        key="drop2",
+        options=[1,2,3,4], 
+        default=4, 
+        layout=LAYOUT_PLACE,
+        x=300, y=500,
+        hover_color = "#545454"
+        
+    )
+    window.add_element(optionMenu1)
 
+    
+    app.run(window) 
 
 if __name__ == "__main__":
     Example_1() 
