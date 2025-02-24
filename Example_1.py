@@ -2,10 +2,10 @@ from PyLiteViewGUI import *
 
 def Example_1():
     app = App()
-    # window = Window("Layout Examples", size=(800, 600) , bg_color="gray", resizable=True)
+    window = Window("Layout Examples", size=(800, 600) , bg_color="darkgray", resizable=True)
     window = Window("Layout Examples")
-    window.wm.geometry("800x600")
-    window.wm.configure(bg="darkgray")  
+    # window.wm.geometry("800x600")
+    # window.wm.configure(bg="darkgray")  
      
     # \\ Grid Layout Example
     grid_frame = Frame(
