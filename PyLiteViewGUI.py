@@ -42,9 +42,12 @@
 #=====================#
 #    Base imports     #
 #=====================#
+
 import tkinter as tk
 from tkinter import ttk
+
 from typing import Optional, Callable, Tuple, Dict, Any, List
+
 import ctypes
 from ctypes import windll, byref, sizeof, c_int, c_void_p
 
@@ -52,7 +55,7 @@ from ctypes import windll, byref, sizeof, c_int, c_void_p
 # Widget Element Type #
 #=====================#
 ELEM_TYPE_BUTTON = 0
-ELEM_TYPE_TEXT = 1
+ELEM_TYPE_LABEL = 1
 ELEM_TYPE_INPUT = 2
 ELEM_TYPE_CHECKBOX = 3
 ELEM_TYPE_DROPDOWN = 4
@@ -63,7 +66,9 @@ ELEM_TYPE_CANVAS = 8
 ELEM_TYPE_LIST = 9
 ELEM_TYPE_MENU = 10
 ELEM_TYPE_SPINBOX = 11
-ELEM_TYPE_BUTTON2 = 12
+ELEM_TYPE_BUTTON2 = 12 
+ELEM_TYPE_TEXT = 13
+ELEM_TYPE_TOPLEVEL = 14
 
 #====================#
 #    Layout Types    #
@@ -149,6 +154,121 @@ TK_THEME_VISTA = 'vista'
 TK_THEME_XPNATIVE = 'xpnative'
 
 #--------------------------------------------END OF CONSTANTS \ IMPORTS-------------------------------------------------------------------------------------------------
+
+#==================#
+# Variable Classes #
+#==================#
+
+class Variable:
+    """A custom value holder for GUI elements like buttons, labels, and entries.
+    This class allows me to store and manage values that can be dynamically updated
+    and tracked. It supports basic operations like setting, getting, and tracing
+    changes to the value.
+    """
+    _default = None  # Default value for the variable
+
+    def __init__(self, value=None):
+        """Initialize the variable with an optional initial value.
+        Args:
+            value: The initial value of the variable. Defaults to None.
+        """
+        self._value = value if value is not None else self._default
+        self._callbacks = []  # List of callback functions to call on value changes
+
+    def set(self, value):
+        """Set the value of the variable.
+        Args:
+            value: The new value to set.
+        """
+        if self._value != value:
+            self._value = value
+            self._notify_callbacks()  # Notify all registered callbacks
+
+    def get(self):
+        """Get the current value of the variable.
+        Returns:
+            The current value.
+        """
+        return self._value
+
+    def trace_add(self, callback):
+        """Add a callback to be called when the value changes.
+        Args:
+            callback: A function to call when the value is updated.
+        """
+        if callback not in self._callbacks:
+            self._callbacks.append(callback)
+
+    def trace_remove(self, callback):
+        """Remove a previously added callback.
+        Args:
+            callback: The callback function to remove.
+        """
+        if callback in self._callbacks:
+            self._callbacks.remove(callback)
+
+    def _notify_callbacks(self):
+        """Notify all registered callbacks of a value change."""
+        for callback in self._callbacks:
+            callback(self._value)
+
+    def __str__(self):
+        """Return a string representation of the variable's value."""
+        return str(self._value)
+
+    def __eq__(self, other):
+        """Compare the variable's value with another value."""
+        return self._value == other
+
+
+class StringVar(Variable):
+    """A specialized Variable for holding string values."""
+    _default = ""  
+
+    def __init__(self, value=None):
+        """Initialize the StringVar with an optional initial value.
+        Args:
+            value: The initial string value. Defaults to an empty string.
+        """
+        super().__init__(value if value is not None else self._default)
+
+
+class IntVar(Variable):
+    """A specialized Variable for holding integer values."""
+    _default = 0  
+
+    def __init__(self, value=None):
+        """Initialize the IntVar with an optional initial value.
+        Args:
+            value: The initial integer value. Defaults to 0.
+        """
+        super().__init__(value if value is not None else self._default)
+
+
+class DoubleVar(Variable):
+    """A specialized Variable for holding floating-point values."""
+    _default = 0.0  
+
+    def __init__(self, value=None):
+        """Initialize the DoubleVar with an optional initial value.
+        Args:
+            value: The initial floating-point value. Defaults to 0.0.
+        """
+        super().__init__(value if value is not None else self._default)
+
+
+class BooleanVar(Variable):
+    """A specialized Variable for holding boolean values."""
+    _default = False 
+
+    def __init__(self, value=None):
+        """Initialize the BooleanVar with an optional initial value.
+        Args:
+            value: The initial boolean value. Defaults to False.
+        """
+        super().__init__(value if value is not None else self._default)
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #===============#
 # Style Manager #
@@ -287,8 +407,9 @@ class PyWidget:
         self.ParentForm = None
         self.font = font 
         self.cursor = cursor   
-        self.focus_bg = focus_bg  # \\ Focus color background
-        self.focus_fg = focus_fg  # \\ Focus Text Color       
+        self.focus_bg = focus_bg  
+        self.focus_fg = focus_fg        
+        self.tooltip = None  #
         if len(font) == 2: # \\ Ensure the font tuple has 3 elements (family, size, style)
             font = (font[0], font[1], DEFAULT_FONT[2])  # \\ Fallback to default style
         self.font = font
@@ -311,25 +432,44 @@ class PyWidget:
             elif self.layout == LAYOUT_PLACE:
                 self.Widget.place(**layout_options)
 
-    def update_font(self, font_family: Optional[str] = None, font_size: Optional[int] = None, font_style: Optional[list] = None):
+    def update_font(
+        self,
+        font_family: Optional[str] = None,
+        font_size: Optional[int] = None,
+        font_style: Optional[list] = None,
+        strikethrough: bool = False,
+        overstrike: bool = False,
+        slant: Optional[str] = None,
+        weight: Optional[str] = None,
+    ):
+        """
+        Update the font properties of the widget.
+        :param font_family: The font family (e.g., "Arial", "Helvetica").
+        :param font_size: The font size (e.g., 12, 14).
+        :param font_style: A list of font styles (e.g., ["bold", "italic", "underline"]).
+        :param strikethrough: Whether to apply strikethrough to the text.
+        :param overstrike: Whether to apply overstrike to the text.
+        :param slant: The slant of the font (e.g., "italic", "roman").
+        :param weight: The weight of the font (e.g., "bold", "normal").
+        """
         if font_family:
             self.font_family = font_family
         if font_size:
             self.font_size = font_size
         if font_style:
             self.font_style = font_style
-
+        # \\ Initialize font tuple with family and size
         self.font = (self.font_family, self.font_size)
-        
+        # \\ Apply font styles
         if "bold" in self.font_style:
             self.font += ("bold",)
         if "italic" in self.font_style:
             self.font += ("italic",)
         if "underline" in self.font_style:
             self.font += ("underline",)
-        if self.Widget:
-            self.Widget.config(font=self.font)
-    
+        if overstrike:
+            self.font += ("overstrike",)
+
     def get_value(self):
         """Returns the current value of the element."""
         return None
@@ -375,12 +515,123 @@ class PyWidget:
         self.highlight_bg = bg
         self.highlight_fg = fg
         if self.Widget:
-            try:
-                # Update the highlight colors for the widget
+            try: # \\ Update the highlight colors for the widget
                 self.Widget.config(selectbackground=self.highlight_bg, selectforeground=self.highlight_fg)
-            except tk.TclError:
-                # Widget does not support text selection (e.g., Button)
+            except tk.TclError: # \\ Widget does not support text selection (e.g., Button)
                 pass
+    
+    def set_tooltip(self, text: str):
+        """
+        Set a tooltip for the widget.
+        :param text: The text to display in the tooltip.
+        """
+        if self.Widget:
+            self.tooltip = Tooltip(self.Widget, text)
+    
+    def bind_event(self, event: str, callback: Callable, add: Optional[str] = None):
+        """
+        Bind an event to a callback function.
+        :param event: The event to bind (e.g., "<Button-1>", "<KeyPress>", "<Enter>").
+        :param callback: The function to call when the event occurs.
+        :param add: Optional argument to add a new binding instead of replacing existing ones.
+        """
+        if self.Widget:
+            self.Widget.bind(event, callback, add)
+
+    def unbind_event(self, event: str):
+        """
+        Unbind an event from the widget.
+        :param event: The event to unbind.
+        """
+        if self.Widget:
+            self.Widget.unbind(event) 
+
+    def set_padding(self, padx: int, pady: int):
+        """
+        Set padding inside the widget.
+        :param padx: Horizontal padding (left and right).
+        :param pady: Vertical padding (top and bottom).
+        """
+        if self.Widget:
+            self.Widget.config(padx=padx, pady=pady) 
+
+    def set_margins(self, marginx: int, marginy: int):
+        """
+        Set margins outside the widget.
+        :param marginx: Horizontal margin (left and right).
+        :param marginy: Vertical margin (top and bottom).
+        """
+        if self.Widget:
+            if self.layout == LAYOUT_GRID:
+                self.layout_options.update({"padx": marginx, "pady": marginy})
+            elif self.layout == LAYOUT_PACK:
+                self.layout_options.update({"padx": marginx, "pady": marginy})
+            elif self.layout == LAYOUT_PLACE:
+                self.layout_options.update({"relx": marginx / 100, "rely": marginy / 100})
+            self.apply_layout()
+
+    def enable_drag(self):
+        """Enable smooth dragging of the widget without screen tearing."""
+        if self.Widget:
+            self.Widget.bind("<ButtonPress-1>", self.on_drag_start)
+            self.Widget.bind("<B1-Motion>", self.on_drag_motion)
+            self.Widget.bind("<ButtonRelease-1>", self.on_drag_end)
+
+    def on_drag_start(self, event):
+        """Capture the initial mouse position and widget position when dragging starts."""
+        self._drag_data = {
+            "x": event.x_root, 
+            "y": event.y_root,  
+            "widget_x": self.Widget.winfo_x(),  
+            "widget_y": self.Widget.winfo_y()   
+        }
+        self.Widget.config(cursor="fleur")
+
+    def on_drag_motion(self, event):
+        """Update the widget's position smoothly as the user drags the mouse."""
+        if hasattr(self, "_drag_data"):
+            dx = event.x_root - self._drag_data["x"]
+            dy = event.y_root - self._drag_data["y"]
+            new_x = self._drag_data["widget_x"] + dx
+            new_y = self._drag_data["widget_y"] + dy
+            self.Widget.place(x=new_x, y=new_y)
+            self._drag_data["x"] = event.x_root
+            self._drag_data["y"] = event.y_root
+            self._drag_data["widget_x"] = new_x
+            self._drag_data["widget_y"] = new_y
+
+    def on_drag_end(self, event):
+        """Clean up after dragging ends."""
+        if hasattr(self, "_drag_data"):
+            del self._drag_data
+        self.Widget.config(cursor="arrow")
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class Tooltip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event=None):
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+
+        self.tooltip_window = tk.Toplevel(self.widget)
+        self.tooltip_window.wm_overrideredirect(True)
+        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(self.tooltip_window, text=self.text, background="#ffffe0", relief="solid", borderwidth=1)
+        label.pack()
+
+    def hide_tooltip(self, event=None):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -413,12 +664,19 @@ class Button(PyWidget):
         if self.on_click:
             self.on_click()
 
+    def set_tooltip(self, text: str):
+        """
+        Set a tooltip for the button.
+        :param text: The text to display in the tooltip.
+        """
+        super().set_tooltip(text) 
+
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Label(PyWidget):
     """label element."""
     def __init__(self, text: str, key: Optional[str] = None, **kwargs):
-        super().__init__(ELEM_TYPE_TEXT, key=key, **kwargs)
+        super().__init__(ELEM_TYPE_LABEL, key=key, **kwargs)
         self.text = text
 
     def create_widget(self, parent: tk.Widget):
@@ -786,7 +1044,7 @@ class Menu(PyWidget):
             raise RuntimeError("Menu not initialized. Call create_widget() first.")
         self.tk_menu.add_separator() 
 
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Spinbox(PyWidget):
     """numeric entry widget with increment/decrement buttons."""
@@ -885,6 +1143,51 @@ class RoundButton(PyWidget):
         if self.on_click:
             self.on_click()
 
+
+
+class Text(PyWidget):
+    """Multi-line text input element."""
+    def __init__(self, key: str, default_text: str = "", **kwargs):
+        super().__init__(ELEM_TYPE_TEXT, key=key, **kwargs)
+        self.default_text = default_text
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = tk.Text(
+            parent,
+            bg=self.bg,
+            fg=self.fg,
+            width=self.width,
+            height=self.height,
+            font=self.font,
+            cursor=self.cursor,
+            relief=self.Frame,
+            borderwidth=self.BorderWidth
+        )
+        self.Widget.insert(tk.END, self.default_text)
+        self.set_highlight_colors(bg="yellow", fg="black")  # Set highlight colors
+        self.bind_focus_events()
+
+    def get_value(self):
+        return self.Widget.get("1.0", tk.END).strip() 
+    
+
+class TopLevel(PyWidget):
+    """A new window that can contain other widgets."""
+    def __init__(self, title: str, key: Optional[str] = None, **kwargs):
+        super().__init__(ELEM_TYPE_TOPLEVEL, key=key, **kwargs)
+        self.title = title
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = tk.Toplevel(parent)
+        self.Widget.title(self.title)
+        self.Widget.geometry(f"{self.width}x{self.height}") if self.width and self.height else None
+        self.Widget.configure(bg=self.bg)
+
+    def add_widget(self, widget: PyWidget):
+        """Add a widget to the TopLevel window."""
+        widget.create_widget(self.Widget)
+        widget.apply_layout()
+
 #=================================================================#
 #  #######  #     #  #####               ###    #######           #
 #  #        ##    #  #    #             #   #   #                 #
@@ -922,6 +1225,196 @@ class RoundButton(PyWidget):
 # ██     ██ ██     ██ ██    ██ ██     ██  ██████   ████████ ██     ██  #
 #======================================================================#
 
+class WM:
+    """Communication with the Tkinter window manager (Tcl interpreter)."""
+    def __init__(self, window):
+        self.window = window  # \\ Reference to the parent window (Tk or Toplevel)
+        self.tk = window.tk  # \\ Reference to the Tcl interpreter
+
+    def configure(self, **kwargs):
+        """
+        Configure the window's properties.
+        Example: window.wm.configure(bg="gray")
+        """
+        self.window.configure(**kwargs)
+    
+    def aspect(self, minNumer=None, minDenom=None, maxNumer=None, maxDenom=None):
+        """Set or get the aspect ratio constraints for the window."""
+        if minNumer is None and minDenom is None and maxNumer is None and maxDenom is None:
+            return self.tk.call("wm", "aspect", self.window)
+        self.tk.call("wm", "aspect", self.window, minNumer, minDenom, maxNumer, maxDenom)
+
+    def attributes(self, *args, **kwargs):
+        """Set or get platform-specific window attributes."""
+        if not args and not kwargs:
+            return self.tk.call("wm", "attributes", self.window)
+        if len(args) == 1:
+            return self.tk.call("wm", "attributes", self.window, args[0])
+        self.tk.call("wm", "attributes", self.window, *args, **kwargs)
+
+    def client(self, name=None):
+        """Set or get the WM_CLIENT_MACHINE property."""
+        if name is None:
+            return self.tk.call("wm", "client", self.window)
+        self.tk.call("wm", "client", self.window, name)
+
+    def colormapwindows(self, *wlist):
+        """Set or get the WM_COLORMAP_WINDOWS property."""
+        if not wlist:
+            return self.tk.call("wm", "colormapwindows", self.window)
+        self.tk.call("wm", "colormapwindows", self.window, *wlist)
+
+    def command(self, value=None):
+        """Set or get the WM_COMMAND property."""
+        if value is None:
+            return self.tk.call("wm", "command", self.window)
+        self.tk.call("wm", "command", self.window, value)
+
+    def deiconify(self):
+        """Deiconify the window (restore from minimized state)."""
+        self.tk.call("wm", "deiconify", self.window)
+
+    def focusmodel(self, model=None):
+        """Set or get the focus model."""
+        if model is None:
+            return self.tk.call("wm", "focusmodel", self.window)
+        self.tk.call("wm", "focusmodel", self.window, model)
+
+    def forget(self, window):
+        """Unmap the window and stop managing it."""
+        self.tk.call("wm", "forget", window)
+
+    def frame(self):
+        """Get the identifier for the window's decorative frame."""
+        return self.tk.call("wm", "frame", self.window)
+
+    def geometry(self, newGeometry=None):
+        """Set or get the window geometry."""
+        if newGeometry is None:
+            return self.tk.call("wm", "geometry", self.window)
+        self.tk.call("wm", "geometry", self.window, newGeometry)
+
+    def grid(self, baseWidth=None, baseHeight=None, widthInc=None, heightInc=None):
+        """Set or get the grid size for the window."""
+        if baseWidth is None and baseHeight is None and widthInc is None and heightInc is None:
+            return self.tk.call("wm", "grid", self.window)
+        self.tk.call("wm", "grid", self.window, baseWidth, baseHeight, widthInc, heightInc)
+
+    def group(self, pathName=None):
+        """Set or get the group leader for the window."""
+        if pathName is None:
+            return self.tk.call("wm", "group", self.window)
+        self.tk.call("wm", "group", self.window, pathName)
+
+    def iconbitmap(self, bitmap=None, default=None):
+        """Set or get the icon bitmap for the window."""
+        if bitmap is None and default is None:
+            return self.tk.call("wm", "iconbitmap", self.window)
+        if default:
+            self.tk.call("wm", "iconbitmap", self.window, "-default", default)
+        else:
+            self.tk.call("wm", "iconbitmap", self.window, bitmap)
+
+    def iconify(self):
+        """Iconify the window (minimize it)."""
+        self.tk.call("wm", "iconify", self.window)
+
+    def iconmask(self, bitmap=None):
+        """Set or get the icon mask for the window."""
+        if bitmap is None:
+            return self.tk.call("wm", "iconmask", self.window)
+        self.tk.call("wm", "iconmask", self.window, bitmap)
+
+    def iconname(self, newName=None):
+        """Set or get the icon name for the window."""
+        if newName is None:
+            return self.tk.call("wm", "iconname", self.window)
+        self.tk.call("wm", "iconname", self.window, newName)
+
+    def iconposition(self, x=None, y=None):
+        """Set or get the icon position for the window."""
+        if x is None and y is None:
+            return self.tk.call("wm", "iconposition", self.window)
+        self.tk.call("wm", "iconposition", self.window, x, y)
+
+    def iconwindow(self, pathName=None):
+        """Set or get the icon window for the window."""
+        if pathName is None:
+            return self.tk.call("wm", "iconwindow", self.window)
+        self.tk.call("wm", "iconwindow", self.window, pathName)
+
+    def manage(self, widget):
+        """Manage a widget as a top-level window."""
+        self.tk.call("wm", "manage", widget)
+
+    def maxsize(self, width=None, height=None):
+        """Set or get the maximum size for the window."""
+        if width is None and height is None:
+            return self.tk.call("wm", "maxsize", self.window)
+        self.tk.call("wm", "maxsize", self.window, width, height)
+
+    def minsize(self, width=None, height=None):
+        """Set or get the minimum size for the window."""
+        if width is None and height is None:
+            return self.tk.call("wm", "minsize", self.window)
+        self.tk.call("wm", "minsize", self.window, width, height)
+
+    def overrideredirect(self, boolean=None):
+        """Set or get the override-redirect flag for the window."""
+        if boolean is None:
+            return self.tk.call("wm", "overrideredirect", self.window)
+        self.tk.call("wm", "overrideredirect", self.window, boolean)
+
+    def positionfrom(self, who=None):
+        """Set or get the position-from flag for the window."""
+        if who is None:
+            return self.tk.call("wm", "positionfrom", self.window)
+        self.tk.call("wm", "positionfrom", self.window, who)
+
+    def protocol(self, name=None, func=None):
+        """Bind a function to a window protocol."""
+        if name is None:
+            return self.tk.call("wm", "protocol", self.window)
+        if func is None:
+            return self.tk.call("wm", "protocol", self.window, name)
+        self.tk.call("wm", "protocol", self.window, name, func)
+
+    def resizable(self, width=None, height=None):
+        """Set or get the resizable flag for the window."""
+        if width is None and height is None:
+            return self.tk.call("wm", "resizable", self.window)
+        self.tk.call("wm", "resizable", self.window, width, height)
+
+    def sizefrom(self, who=None):
+        """Set or get the size-from flag for the window."""
+        if who is None:
+            return self.tk.call("wm", "sizefrom", self.window)
+        self.tk.call("wm", "sizefrom", self.window, who)
+
+    def state(self, newstate=None):
+        """Set or get the window state."""
+        if newstate is None:
+            return self.tk.call("wm", "state", self.window)
+        self.tk.call("wm", "state", self.window, newstate)
+
+    def title(self, string=None):
+        """Set or get the window title."""
+        if string is None:
+            return self.tk.call("wm", "title", self.window)
+        self.tk.call("wm", "title", self.window, string)
+
+    def transient(self, master=None):
+        """Set or get the transient flag for the window."""
+        if master is None:
+            return self.tk.call("wm", "transient", self.window)
+        self.tk.call("wm", "transient", self.window, master)
+
+    def withdraw(self):
+        """Withdraw the window from the screen."""
+        self.tk.call("wm", "withdraw", self.window)
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 class App:
     """
     A custom class to manage the Tkinter application lifecycle.
@@ -946,6 +1439,7 @@ class App:
             window.TKroot.destroy()  
         print("Application shutdown complete.")
 
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class Window:
     """Manages the main Tkinter window and elements."""
@@ -963,6 +1457,7 @@ class Window:
         """
         self.TKroot = tk.Tk()
         self.TKroot.title(title)
+        self.wm = WM(self.TKroot)
         self.elements: List['PyWidget'] = []
         self.key_dict: Dict[str, 'PyWidget'] = {}
         self.TKroot.after(100, self._set_title_bar_gray)
