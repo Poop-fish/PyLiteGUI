@@ -21,10 +21,10 @@ A lightweight, object-oriented GUI framework built on Tkinter, offering modern s
 
 ---
 
-## Available Widgets
+## Widget Basic Overview
 
 <details>
-<summary>📜 Click to view available widgets</summary>
+<summary>📜 Click to view widget table</summary>
 
 | Widget          | Description                                    |
 | --------------- | ---------------------------------------------- |
