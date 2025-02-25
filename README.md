@@ -2,7 +2,7 @@
 
 A lightweight, object-oriented GUI framework built on Tkinter, offering modern styling and simplified widget management.
 
-> **Note:** This project is a work in progress. Additional documentation will be added as development continues.
+> **Note:** This project is a work in progress. Making projects like these helps me improve as a coder. Additional documentation will be added as development continues.
 
 ---
 
