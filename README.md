@@ -223,5 +223,19 @@ window.add_element(entry1)
 
 ---
 
-**PyLiteGUI – Simplifying GUI Development with Tkinter**
+### 🏗️ Layouts
+
+- PyLiteGUI supports multiple layout management options to help you organize widgets effectively:
+
+### 🔳 Grid Layout
+
+- A flexible table-like structure for precise placement.
+
+### 📦 Pack Layout
+
+- Stacks widgets vertically or horizontally in the available space.
+
+### 📍 Place Layout
+
+- Explicit positioning of widgets using x and y coordinates.
 
