@@ -19,6 +19,25 @@ A lightweight, object-oriented GUI framework built on Tkinter, offering modern s
 - 🖱️ **Cursor Support** - Over 25 cursor types for interactive elements
 - 🪟 **Window Management** - Provides control over position, resizing, and theming
 
+--- 
+
+## Limitations
+
+- Platform-Specific Features: Some elements (e.g., rounded buttons, title bar coloring) use Windows APIs.
+
+- Performance: May struggle with highly complex UIs (1000+ elements).
+
+- Modern Aesthetics: While improved, still inherits Tkinter's native look on some platforms.
+
+## Conclusion
+PyGUI Framework simplifies Tkinter development by providing a structured, feature-rich toolkit. Ideal for:
+
+- Rapid prototyping
+
+- Educational tools
+
+- Desktop utilities requiring lightweight dependencies
+
 ---
 
 ## Widget Basic Overview
