@@ -25,7 +25,7 @@ A lightweight, object-oriented GUI framework built on Tkinter, offering modern s
 
 - Platform-Specific Features: Some elements (e.g., rounded buttons, title bar coloring) use Windows APIs.
 
-- Performance: May struggle with highly complex UIs (1000+ elements).
+- Performance: May struggle with highly complex UIs.
 
 - Modern Aesthetics: While improved, still inherits Tkinter's native look on some platforms.
 
