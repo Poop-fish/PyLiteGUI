@@ -45,10 +45,12 @@
 
 import tkinter as tk
 from tkinter import ttk
+from PIL import Image, ImageTk 
 
 from typing import Optional, Callable, Tuple, Dict, Any, List
 
 import ctypes
+
 from ctypes import windll, byref, sizeof, c_int, c_void_p
 
 #=====================#
@@ -70,6 +72,7 @@ ELEM_TYPE_BUTTON2 = 12
 ELEM_TYPE_TEXT = 13
 ELEM_TYPE_TOPLEVEL = 14
 ELEM_TYPE_OPTIONMENU = 15
+
 #====================#
 #    Layout Types    #
 #====================#
@@ -152,6 +155,16 @@ TK_THEME_ALT = 'alt'
 TK_THEME_CLASSIC = 'classic'
 TK_THEME_VISTA = 'vista'
 TK_THEME_XPNATIVE = 'xpnative'
+
+#==============#
+# Tk Compounds #
+#==============#
+LEFT = tk.LEFT
+RIGHT = tk.RIGHT
+TOP = tk.TOP
+BOTTOM = tk.BOTTOM
+CENTER = tk.CENTER 
+
 
 #--------------------------------------------END OF CONSTANTS \ IMPORTS-------------------------------------------------------------------------------------------------
 
@@ -401,11 +414,11 @@ class PyWidget:
                  width: int = None, 
                  height: int = None, 
                  visible: bool = True, 
-                 layout: str = LAYOUT_GRID, 
+                 layout: str = LAYOUT_GRID, # \\ Maybe change default Layout to Place  
                  border_color: str = None,
                  cursor: str = CURSOR_ARROW,
                  focus_bg=None, focus_fg=None,
-                 enable_hover: bool = True,  # \\ New parameter
+                 enable_hover: bool = True,  
                  font: Tuple[str, int, str] = DEFAULT_FONT, 
                  **layout_options):
         self.elem_type = elem_type
@@ -426,7 +439,7 @@ class PyWidget:
         self.cursor = cursor   
         self.focus_bg = focus_bg  
         self.focus_fg = focus_fg        
-        self.tooltip = None  #
+        self.tooltip = None  
         self.hover_enable = enable_hover
         
         if len(font) == 2: # \\ Ensure the font tuple has 3 elements (family, size, style)
@@ -668,28 +681,58 @@ class Tooltip:
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
 class Button(PyWidget):
-    def __init__(self, text: str, key: str, on_click: Optional[Callable] = None, **kwargs):
+    def __init__(self, 
+                 key: Optional[str] = None , 
+                 text: Optional[str] = None, 
+                 on_click: Optional[Callable] = None, 
+                 icon: Optional[str] = None, 
+                 icon_size: Optional[Tuple[int, int]] = None, 
+                 compound: Optional[str] = LEFT,
+                 **kwargs):
         super().__init__(ELEM_TYPE_BUTTON, key=key, **kwargs)
         self.text = text
         self.on_click = on_click  
+        self.icon = icon
+        self.icon_size = icon_size 
+        self.icon_image = None
+        self.compound = compound
 
     def create_widget(self, parent: tk.Widget):
+        if self.icon:
+            try:
+                pil_image = Image.open(self.icon)
+                if self.icon_size:
+                    pil_image = pil_image.resize(self.icon_size, Image.Resampling.LANCZOS)
+                self.icon_image = ImageTk.PhotoImage(pil_image)
+            except ImportError:
+                try:
+                    self.icon_image = tk.PhotoImage(file=self.icon)
+                    if self.icon_size:
+                        print("Warning: Install Pillow to resize images. Using original size.")
+                except Exception as e:
+                    print(f"Error loading icon: {e}")
+                    self.icon_image = None
+            except Exception as e:
+                print(f"Error loading icon: {e}")
+                self.icon_image = None
+
         self.Widget = tk.Button(
             parent,
             text=self.text,
+            image=self.icon_image,
+            compound=self.compound,
             bg=self.bg,
             fg=self.fg,
             cursor=self.cursor,
             font=self.font,
             width=self.width,
             height=self.height,
-            relief=self.Frame,  
-            borderwidth=self.BorderWidth,  
+            relief=self.Frame,
+            borderwidth=self.BorderWidth,
             activebackground=self.HoverColor,
-            command=self.callback_handler
+            command=self.callback_handler,
         )
-        
-        self.bind_hover_events()     
+        self.bind_hover_events()    
       
     def callback_handler(self):
         """Handles button click event."""
@@ -728,9 +771,9 @@ class Label(PyWidget):
         self.bind_hover_events() 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
+# TODO: look over init and add better type handling 
 class Entry(PyWidget):
     """Text input element with validation."""
-
     def __init__(self, key: str, default_text: str = "", validate_func=None, **kwargs):
         super().__init__(ELEM_TYPE_INPUT, key=key, **kwargs)
         self.var = tk.StringVar(value=default_text)
@@ -1275,7 +1318,6 @@ class TopLevel(PyWidget):
 
 class OptionMenu(PyWidget):
     """Dropdown (combobox) element using tk.OptionMenu."""
-
     def __init__(self, key: str, options: List[str], default: Optional[str] = None, **kwargs):
         """
         Initialize the Dropdown widget.
@@ -1341,8 +1383,8 @@ class OptionMenu(PyWidget):
         else:
             raise ValueError(f"Value '{value}' is not in the options list.")
 
-
 #-------------------------------------------------TTK WIDGETS-----------------------------------------------------------------------------------------
+
 class Notebook(PyWidget):
     """A widget for creating advanced tabbed interfaces using ttk.Notebook."""
     
@@ -1350,7 +1392,6 @@ class Notebook(PyWidget):
                  tab_padding: tuple[int, int] = (10, 10), **kwargs):
         """
         Initialize the Notebook widget.
-
         Args:
             key (Optional[str]): Unique identifier for the widget.
             background (str): Background color for tab frames (default: "lightgray").
@@ -1358,16 +1399,14 @@ class Notebook(PyWidget):
             **kwargs: Additional arguments passed to the PyWidget base class.
         """
         super().__init__(ELEM_TYPE_FRAME, key=key, **kwargs)
-        self.tabs: Dict[str, PyWidget] = {}  # Store tab titles and their widgets
+        self.tabs: Dict[str, PyWidget] = {} 
         self.bg = background
         self.tab_padding = tab_padding
 
     def create_widget(self, parent: tk.Widget) -> None:
         """Create the ttk.Notebook widget and apply styling."""
         self.Widget = ttk.Notebook(parent)
-        # Apply style with a modern theme
         PyStyle(theme="clam", background=self.bg, accent="gray")
-        # Ensure the notebook itself is packed by the base class (assumed)
     
     def add_tab(self, title: str, widget: PyWidget, layout: str = "pack", 
                 padx: Optional[int] = None, pady: Optional[int] = None) -> None:
@@ -1387,18 +1426,12 @@ class Notebook(PyWidget):
         if not self.Widget:
             return
         
-        # Create a frame for the tab content
         tab_frame = tk.Frame(self.Widget, bg=self.bg)
-        tab_frame.pack(expand=True, fill="both")  # Frame fills the tab area
-        
-        # Create the widget inside the tab frame
-        widget.create_widget(tab_frame)
-        
-        # Apply padding (use provided values or default)
+        tab_frame.pack(expand=True, fill="both")  
+        widget.create_widget(tab_frame)                            # TODO: clean this up 
         padx = padx if padx is not None else self.tab_padding[0]
         pady = pady if pady is not None else self.tab_padding[1]
         
-        # Position the widget within the tab frame
         if layout == "pack":
             widget.Widget.pack(expand=True, fill="both", padx=padx, pady=pady)
         elif layout == "grid":
@@ -1407,11 +1440,7 @@ class Notebook(PyWidget):
             tab_frame.grid_columnconfigure(0, weight=1)
         else:
             raise ValueError(f"Unsupported layout manager: {layout}. Use 'pack' or 'grid'.")
-        
-        # Apply the widget's internal layout
         widget.apply_layout()
-        
-        # Add the frame to the notebook as a tab
         self.Widget.add(tab_frame, text=title)
         self.tabs[title] = widget
 
@@ -1422,9 +1451,8 @@ class Notebook(PyWidget):
     def remove_tab(self, title: str) -> None:
         """Remove the tab with the specified title."""
         if self.Widget and title in self.tabs:
-            self.Widget.forget(self.tabs[title].Widget.master)  # Remove tab from notebook
+            self.Widget.forget(self.tabs[title].Widget.master)  
             del self.tabs[title]
-
 
 #---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1723,7 +1751,6 @@ class App:
 
 class Window:
     """Manages the main Tkinter window and elements."""
-
     def __init__(self, title: str, size: Optional[Tuple[int, int]] = None, bg_color: Optional[str] = None, icon_path: Optional[str] = "Assets/FaceLogo.ico", position: Optional[Tuple[int, int]] = None, resizable: bool = False):
         """
         Initializes the Tkinter window.
@@ -1759,7 +1786,7 @@ class Window:
         try:
             hwnd = windll.user32.GetParent(self.TKroot.winfo_id())  # \\ Get window handle
             DWMWA_CAPTION_COLOR = 35  # \\ Windows 11+
-            GRAY_COLOR = 0x272727   # \\ RGB(128, 128, 128) → Dark Gray
+            GRAY_COLOR = 0x272727  # \\ RGB(128, 128, 128) → Dark Gray
             # \\ Apply title bar color
             windll.dwmapi.DwmSetWindowAttribute(
                 hwnd, DWMWA_CAPTION_COLOR, byref(c_int(GRAY_COLOR)), sizeof(c_int)
