@@ -3,7 +3,7 @@ from PyLiteViewGUI import *
 def Example_1():
     app = App()
     window = Window("Layout Examples", size=(800, 600) , bg_color="darkgray", resizable=True)
-    window = Window("Layout Examples")
+    # window = Window("Layout Examples")
     # window.wm.geometry("800x600")
     # window.wm.configure(bg="darkgray")  
      
@@ -125,8 +125,12 @@ def Example_1():
 
     button_place = Button(
         text="Place Button", 
-        key="btn_place", 
-        layout=LAYOUT_PLACE, 
+        key="btn_place",
+        bg="gray",
+        compound=RIGHT, 
+        layout=LAYOUT_PLACE,
+        icon="Assets/Pat2.png", 
+        icon_size=(32, 32),
         x=300, y=300
     )
     window.add_element(button_place)  
@@ -225,7 +229,6 @@ def Example_1():
     )
     window.add_element(optionMenu1)
 
-    
     app.run(window) 
 
 if __name__ == "__main__":
