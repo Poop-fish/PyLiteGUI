@@ -1759,7 +1759,7 @@ class Window:
         try:
             hwnd = windll.user32.GetParent(self.TKroot.winfo_id())  # \\ Get window handle
             DWMWA_CAPTION_COLOR = 35  # \\ Windows 11+
-            GRAY_COLOR = 0x808080  # \\ RGB(128, 128, 128) → Dark Gray
+            GRAY_COLOR = 0x272727   # \\ RGB(128, 128, 128) → Dark Gray
             # \\ Apply title bar color
             windll.dwmapi.DwmSetWindowAttribute(
                 hwnd, DWMWA_CAPTION_COLOR, byref(c_int(GRAY_COLOR)), sizeof(c_int)
