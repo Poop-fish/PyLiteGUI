@@ -40,7 +40,7 @@ PyGUI Framework simplifies Tkinter development by providing a structured, featur
 
 ---
 
-## Widget Basic Overview
+## Basic Widget Overview
 
 <details>
 <summary>📜 Click to view widget table</summary>
