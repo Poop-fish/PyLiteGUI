@@ -1,3 +1,13 @@
+ ___           _         _           ___    _   _  _ 
+(  _`\        ( )     _ ( )_        (  _`\ ( ) ( )(_)
+| |_) ) _   _ | |    (_)| ,_)   __  | ( (_)| | | || |
+| ,__/'( ) ( )| |  _ | || |   /'__`\| |___ | | | || |
+| |    | (_) || |_( )| || |_ (  ___/| (_, )| (_) || |
+(_)    `\__, |(____/'(_)`\__)`\____)(____/'(_____)(_)
+       ( )_| |                                       
+       `\___/'                                       
+---
+
 # PyLiteGUI
 
 A lightweight, object-oriented GUI framework built on Tkinter, offering modern styling and simplified widget management.
