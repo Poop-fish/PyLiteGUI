@@ -2,7 +2,7 @@ from PyLiteViewGUI import *
 
 def Example_1():
     app = App()
-    window = Window("Layout Examples", size=(800, 600) , bg_color="darkgray", resizable=True)
+    window = Window("Layout Examples", size=(800, 600) , bg_color="#1e1e1e", resizable=True)
     # window = Window("Layout Examples")
     # window.wm.geometry("800x600")
     # window.wm.configure(bg="darkgray")  
@@ -228,6 +228,17 @@ def Example_1():
         
     )
     window.add_element(optionMenu1)
+
+    upload_progress = ProgressBar(
+        mode="determinate",
+        maximum=100,
+        key="upload_progress",
+        layout=LAYOUT_PLACE,
+        x=600 , y=100
+    )
+    window.add_element(upload_progress)
+    upload_progress.set_value(75),
+
 
     app.run(window) 
 
