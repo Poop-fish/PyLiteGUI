@@ -42,7 +42,7 @@
 #=====================#
 #    Base imports     #
 #=====================#
-
+from tkinter import *
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk 
@@ -72,7 +72,9 @@ ELEM_TYPE_BUTTON2 = 12
 ELEM_TYPE_TEXT = 13
 ELEM_TYPE_TOPLEVEL = 14
 ELEM_TYPE_OPTIONMENU = 15
-
+ELEM_TYPE_TREE = 16
+ELEM_TYPE_PROGRESS = 17
+ELEM_TYPE_SEPARATOR = 18
 #====================#
 #    Layout Types    #
 #====================#
@@ -98,9 +100,9 @@ DEFAULT_ACCENT = "#555555"
 DEFAULT_ACTIVE = "#666666"
 DEFAULT_DISABLED = "#444444"
 
-#===========================#
-#   Default Relief Styles   #
-#===========================#
+#=======================#
+# Default Relief Styles #
+#=======================#
 DEFAULT_RAISED = "raised"
 DEFAULT_FLAT = "flat"
 DEFAULT_GROOVE = "groove"
@@ -109,13 +111,13 @@ DEFAULT_RIDGE = "ridge"
 DEFAULT_BORDER_WIDTH = 2
 
 #====================#
-#   Default Fonts    #
+# Default Base Fonts #
 #====================#
 DEFAULT_FONT = ("Arial", 12, "normal")
 
-#=====================#
-#   Cursor Types      #
-#=====================#
+#==============#
+# Cursor Types #
+#==============#
 CURSOR_ARROW = "arrow"
 CURSOR_CIRCLE = "circle"
 CURSOR_CLOCK = "clock"
@@ -159,11 +161,37 @@ TK_THEME_XPNATIVE = 'xpnative'
 #==============#
 # Tk Compounds #
 #==============#
+
+# \\ Sides
 LEFT = tk.LEFT
 RIGHT = tk.RIGHT
 TOP = tk.TOP
 BOTTOM = tk.BOTTOM
-CENTER = tk.CENTER 
+
+# \\ Anchor and Stickys   
+NORTH = tk.N
+SOUTH = tk.S
+WEST = tk.W 
+EAST = tk.E
+NW = tk.NW
+NE = tk.NE
+NS = tk.NS
+SW = tk.SW
+SE = tk.SE
+EW = tk.EW
+NSEW = tk.NSEW
+CENTER = tk.CENTER
+
+# \\ Tags ,  Marks , Insert Positions
+CURRENT = tk.CURRENT 
+INSERT = tk.INSERT
+ANCHOR = tk.ANCHOR
+ALL = tk.ALL
+SEL = tk.SEL
+SEL_FIRST = tk.SEL_FIRST 
+SEL_LAST = tk.SEL_LAST
+END = tk.END
+ALL = tk.ALL 
 
 
 #--------------------------------------------END OF CONSTANTS \ IMPORTS-------------------------------------------------------------------------------------------------
@@ -172,114 +200,87 @@ CENTER = tk.CENTER
 # Variable Classes #
 #==================#
 
-class Variable:
-    """A custom value holder for GUI elements like buttons, labels, and entries.
-    This class allows me to store and manage values that can be dynamically updated
-    and tracked. It supports basic operations like setting, getting, and tracing
-    changes to the value.
-    """
-    _default = None  # \\ Default value for the variable
+class PyVariable:
+    """Base class for all custom variables with enhanced tracing"""
+    def __init__(self, var_type, default_value=None):
+        self._type = var_type
+        self._value = default_value
+        self._callbacks = []
+        self._tk_var = None  
+        self._widgets = []    
 
-    def __init__(self, value=None):
-        """Initialize the variable with an optional initial value.
-        Args:
-            value: The initial value of the variable. Defaults to None.
-        """
-        self._value = value if value is not None else self._default
-        self._callbacks = []  # \\ List of callback functions to call on value changes
+    def _create_tk_var(self, master):
+        """Create the underlying Tk variable"""
+        if self._type == str:
+            self._tk_var = tk.StringVar(master=master)
+        elif self._type == int:
+            self._tk_var = tk.IntVar(master=master)
+        elif self._type == float:
+            self._tk_var = tk.DoubleVar(master=master)
+        elif self._type == bool:
+            self._tk_var = tk.BooleanVar(master=master)
+        else:
+            raise ValueError(f"Unsupported variable type: {self._type}")
+
+        # Sync initial value
+        if self._value is not None:
+            self._tk_var.set(self._value)
+
+    def link_widget(self, widget):
+        """Connect variable to a widget"""
+        if not self._tk_var:
+            self._create_tk_var(widget.Widget.master)
+            
+        self._widgets.append(widget)
+        try:
+            widget.Widget.config(textvariable=self._tk_var)
+        except TclError:
+            widget.Widget.config(variable=self._tk_var)
 
     def set(self, value):
-        """Set the value of the variable.
-        Args:
-            value: The new value to set.
-        """
-        if self._value != value:
-            self._value = value
-            self._notify_callbacks()  # \\ Notify all registered callbacks
+        """Set value with type checking"""
+        if not isinstance(value, self._type):
+            try:
+                value = self._type(value)
+            except ValueError:
+                raise TypeError(
+                    f"Invalid type {type(value).__name__} "
+                    f"for {self._type.__name__} variable"
+                )
+                
+        self._value = value
+        if self._tk_var:
+            self._tk_var.set(value)
+        self._notify_observers()
 
     def get(self):
-        """Get the current value of the variable.
-        Returns:
-            The current value.
-        """
-        return self._value
+        return self._value if self._tk_var is None else self._tk_var.get()
 
-    def trace_add(self, callback):
-        """Add a callback to be called when the value changes.
-        Args:
-            callback: A function to call when the value is updated.
-        """
-        if callback not in self._callbacks:
-            self._callbacks.append(callback)
+    def trace(self, callback):
+        """Add value change listener"""
+        self._callbacks.append(callback)
+        if self._tk_var:
+            self._tk_var.trace_add("write", lambda *_: callback())
 
-    def trace_remove(self, callback):
-        """Remove a previously added callback.
-        Args:
-            callback: The callback function to remove.
-        """
-        if callback in self._callbacks:
-            self._callbacks.remove(callback)
-
-    def _notify_callbacks(self):
-        """Notify all registered callbacks of a value change."""
+    def _notify_observers(self):
         for callback in self._callbacks:
-            callback(self._value)
+            callback()
 
-    def __str__(self):
-        """Return a string representation of the variable's value."""
-        return str(self._value)
+class PyStringVar(PyVariable):
+    def __init__(self, default_value=""):
+        super().__init__(str, default_value)
 
-    def __eq__(self, other):
-        """Compare the variable's value with another value."""
-        return self._value == other
+class PyIntVar(PyVariable):
+    def __init__(self, default_value=0):
+        super().__init__(int, default_value)
 
+class PyDoubleVar(PyVariable):
+    def __init__(self, default_value=0.0):
+        super().__init__(float, default_value)
 
-class StringVar(Variable):
-    """A specialized Variable for holding string values."""
-    _default = ""  
-
-    def __init__(self, value=None):
-        """Initialize the StringVar with an optional initial value.
-        Args:
-            value: The initial string value. Defaults to an empty string.
-        """
-        super().__init__(value if value is not None else self._default)
-
-
-class IntVar(Variable):
-    """A specialized Variable for holding integer values."""
-    _default = 0  
-
-    def __init__(self, value=None):
-        """Initialize the IntVar with an optional initial value.
-        Args:
-            value: The initial integer value. Defaults to 0.
-        """
-        super().__init__(value if value is not None else self._default)
-
-
-class DoubleVar(Variable):
-    """A specialized Variable for holding floating-point values."""
-    _default = 0.0  
-
-    def __init__(self, value=None):
-        """Initialize the DoubleVar with an optional initial value.
-        Args:
-            value: The initial floating-point value. Defaults to 0.0.
-        """
-        super().__init__(value if value is not None else self._default)
-
-
-class BooleanVar(Variable):
-    """A specialized Variable for holding boolean values."""
-    _default = False 
-
-    def __init__(self, value=None):
-        """Initialize the BooleanVar with an optional initial value.
-        Args:
-            value: The initial boolean value. Defaults to False.
-        """
-        super().__init__(value if value is not None else self._default)
+class PyBooleanVar(PyVariable):
+    def __init__(self, default_value=False):
+        super().__init__(bool, default_value)
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -817,7 +818,7 @@ class Entry(PyWidget):
 
 class Checkbox(PyWidget):
     """checkbox element."""
-    def __init__(self, text: str, key: str, default: bool = False, **kwargs):
+    def __init__(self, text: str, key: Optional[str] = None, default: bool = False, **kwargs):
         super().__init__(ELEM_TYPE_CHECKBOX, key=key, **kwargs)
         self.text = text 
         self.var = tk.BooleanVar(value=default)
@@ -878,7 +879,7 @@ class RadioButton(PyWidget):
 
 class Slider(PyWidget):
     """slider (scale) element."""  
-    def __init__(self, key: str, min_value: int, max_value: int, default: int = 0, **kwargs):
+    def __init__(self, key: str , min_value: int, max_value: int, default: int = 0, **kwargs):
         super().__init__(ELEM_TYPE_SLIDER, key=key, **kwargs)
         self.var = tk.IntVar(value=default)
         self.min_value = min_value
@@ -973,7 +974,7 @@ class Canvas(PyWidget):
 
 class ListWidget(PyWidget):
     """scrollable list widget."""
-    def __init__(self, key: str, items: List[str] = None, **kwargs):
+    def __init__(self, key: Optional[str] = None , items: List[str] = None, **kwargs):
         super().__init__(ELEM_TYPE_LIST, key=key, **kwargs)
         self.items = items or []
         self.listbox = None
@@ -1118,7 +1119,7 @@ class Spinbox(PyWidget):
 
 # TODO: Clean up edges 
 class RoundButton(PyWidget):
-    def __init__(self, text: str, key: str, on_click: Optional[Callable] = None, **kwargs):
+    def __init__(self, text: str, key: Optional[str] = None, on_click: Optional[Callable] = None, **kwargs):
         super().__init__(ELEM_TYPE_BUTTON2, key=key, **kwargs)
         self.text = text
         self.on_click = on_click  
@@ -1161,7 +1162,6 @@ class RoundButton(PyWidget):
             self.on_click()
  
 #---------------------------------------------------------------------------------------------------------------------------------------------
-
 class Text(PyWidget):
     """Multi-line text input element."""
     def __init__(self, key: str, default_text: str = "", **kwargs):
@@ -1182,12 +1182,18 @@ class Text(PyWidget):
         )
         
         self.Widget.insert(tk.END, self.default_text)
-        self.set_highlight_colors(bg="yellow", fg="black")  # \\ Set highlight colors
+        self.set_highlight_colors(bg="yellow", fg="black")  # Set highlight colors
         self.bind_focus_events()
 
     def get_value(self):
+        """Gets the text from the widget."""
         return self.Widget.get("1.0", tk.END).strip() 
-    
+
+    def set_value(self, text: str):
+        """Sets the text inside the text widget."""
+        self.Widget.delete("1.0", tk.END)  # Clear existing text
+        self.Widget.insert(tk.END, text)  # Insert new text
+
 
 class TopLevel(PyWidget):
     """An advanced top-level window that can contain other widgets with enhanced configuration."""
@@ -1495,6 +1501,162 @@ class Dropdown(PyWidget):
     def get_value(self):
         return self.var.get()
     
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class ProgressBar(PyWidget):
+    """Linear progress indicator with multiple modes"""
+    def __init__(self, mode: str = "determinate", maximum: int = 100, key: str = None, **kwargs):
+        super().__init__(ELEM_TYPE_PROGRESS, key=key, **kwargs)
+        self.mode = mode
+        self.maximum = maximum
+        self.var = tk.DoubleVar()
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Progressbar(
+            parent,
+            variable=self.var,
+            maximum=self.maximum,
+            mode=self.mode,
+            # style=f"custom.Horizontal.TProgressbar"  # Use your style system
+        )
+
+    def set_value(self, value: float):
+        self.var.set(value)
+
+    def start_indeterminate(self, interval=20):
+        self.Widget.start(interval)
+
+    def stop_indeterminate(self):
+        self.Widget.stop() 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class TreeView(PyWidget):
+    """Hierarchical tree widget with columns and rows."""
+    def __init__(self, columns: list, key: str = None, show_headers: bool = True, **kwargs):
+        super().__init__(ELEM_TYPE_TREE, key=key, **kwargs)
+        self.columns = columns
+        self.show_headers = show_headers
+        self._items = {}
+        self.selected_item = None
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Treeview(parent, columns=self.columns, show="headings" if self.show_headers else "")
+        for col in self.columns:
+            self.Widget.heading(col, text=col.title())
+            self.Widget.column(col, width=100)
+
+    def insert_item(self, parent="", values: list = [], iid=None):
+        item = self.Widget.insert(parent, "end", iid=iid, values=values)
+        self._items[iid] = item
+        return item
+
+    def delete_item(self, iid: str):
+        self.Widget.delete(iid)
+        del self._items[iid]
+
+    def get_selected(self):
+        return self.Widget.selection()
+
+    def bind_double_click(self, callback):
+        self.Widget.bind("<Double-1>", lambda e: callback(self.get_selected())) 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class CheckButton(PyWidget):
+    """Boolean toggle with text label"""
+    def __init__(self, text: str, key: str = None, default: bool = False, **kwargs):
+        super().__init__(ELEM_TYPE_CHECKBOX, key=key, **kwargs)
+        self.text = text
+        self.var = tk.BooleanVar(value=default)
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Checkbutton(
+            parent,
+            text=self.text,
+            variable=self.var,
+            style="Custom.TCheckbutton"  # Match your style theme
+        )
+
+    def get_value(self) -> bool:
+        return self.var.get()
+
+    def toggle(self):
+        self.var.set(not self.var.get()) 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class RadioButtonGroup:
+    """Container for mutually exclusive radio buttons"""
+    def __init__(self, orientation="vertical"):
+        self.var = tk.StringVar()
+        self.buttons = []
+        self.orientation = orientation
+
+    def add_button(self, text: str, value: str) -> PyWidget:
+        btn = RadioButton(text, value, self.var)
+        self.buttons.append(btn)
+        return btn
+
+class RadioButton2(PyWidget):
+    """Single radio button element"""
+    def __init__(self, text: str, value: str, variable: tk.StringVar, key: str = None, **kwargs):
+        super().__init__(ELEM_TYPE_RADIO, key=key, **kwargs)
+        self.text = text
+        self.value = value
+        self.var = variable
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Radiobutton(
+            parent,
+            text=self.text,
+            value=self.value,
+            variable=self.var,
+            style="Custom.TRadiobutton"
+        ) 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class Separator(PyWidget):
+    """Visual divider line"""
+    def __init__(self, orientation: str = "horizontal", key: str = None, **kwargs):
+        super().__init__(ELEM_TYPE_SEPARATOR, key=key, **kwargs)
+        self.orientation = orientation
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Separator(parent, orient=self.orientation)
+        if self.orientation == "horizontal":
+            self.Widget.config(style="Sep.Horizontal.TSeparator")
+        else:
+            self.Widget.config(style="Sep.Vertical.TSeparator") 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
+
+class SpinBox(PyWidget):
+    """Numeric input with increment controls"""
+    def __init__(self, from_: int = 0, to: int = 100, key: str = None, **kwargs):
+        super().__init__(ELEM_TYPE_SPINBOX, key=key, **kwargs)
+        self.from_ = from_
+        self.to = to
+        self.var = tk.IntVar()
+
+    def create_widget(self, parent: tk.Widget):
+        self.Widget = ttk.Spinbox(
+            parent,
+            from_=self.from_,
+            to=self.to,
+            textvariable=self.var,
+            wrap=True,
+            style="Custom.TSpinbox"
+        )
+
+    def get_value(self) -> int:
+        return self.var.get()
+
+    def set_value(self, value: int):
+        self.var.set(value) 
+
+#---------------------------------------------------------------------------------------------------------------------------------------------
 
 #=================================================================#
 #  #######  #     #  #####               ###    #######           #
@@ -1786,7 +1948,7 @@ class Window:
         try:
             hwnd = windll.user32.GetParent(self.TKroot.winfo_id())  # \\ Get window handle
             DWMWA_CAPTION_COLOR = 35  # \\ Windows 11+
-            GRAY_COLOR = 0x272727  # \\ RGB(128, 128, 128) → Dark Gray
+            GRAY_COLOR = 0x272727  # \\  → Dark Gray
             # \\ Apply title bar color
             windll.dwmapi.DwmSetWindowAttribute(
                 hwnd, DWMWA_CAPTION_COLOR, byref(c_int(GRAY_COLOR)), sizeof(c_int)
@@ -1831,4 +1993,4 @@ class Window:
         """Starts the event loop and handles user interactions."""
         self.TKroot.mainloop()
 
-#---------------------------------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------------------------------- 
