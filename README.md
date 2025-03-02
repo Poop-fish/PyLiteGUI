@@ -82,6 +82,7 @@ PyLiteGUI simplifies Tkinter development by offering a structured, feature-rich 
 ## Example Files
 
 - `Example_1.py`
+- `App_Example_1.py`
 
 ---
 
