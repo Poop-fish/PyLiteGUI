@@ -32,7 +32,6 @@
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ #
 ########################################################################################################
 
-
 #=======================================================#
 #  ___ __  __ ____   ___  ____ _____ ____               #
 # |_ _|  \/  |  _ \ / _ \|  _ \_   _/ ___|              #
@@ -203,6 +202,44 @@ SEL_LAST = tk.SEL_LAST
 END = tk.END
 ALL = tk.ALL 
 
+#=====================#
+#   Element States    #
+#=====================#
+STATE_NORMAL = "normal"
+STATE_DISABLED = "disabled"
+STATE_ACTIVE = "active"
+STATE_READONLY = "readonly"
+
+#=====================#
+#   Orientations      #
+#=====================#
+ORIENT_HORIZONTAL = "horizontal"
+ORIENT_VERTICAL = "vertical"
+
+#=====================#
+#   Font Constants    #
+#=====================#
+FONT_WEIGHT_NORMAL = "normal"
+FONT_WEIGHT_BOLD = "bold"
+FONT_SLANT_ROMAN = "roman"
+FONT_SLANT_ITALIC = "italic"
+UNDERLINE_NORMAL = 0
+UNDERLINE_UNDERLINE = 1
+
+#=====================#
+#   Fill Constants    #
+#=====================#
+FILL_X = "x"
+FILL_Y = "y"
+FILL_BOTH = "both"
+FILL_NONE = "none"
+
+#=====================#
+#   Wrap Constants    #
+#=====================#
+WRAP_WORD = "word"
+WRAP_CHAR = "char"
+WRAP_NONE = "none"
 
 #--------------------------------------------END OF CONSTANTS \ IMPORTS-------------------------------------------------------------------------------------------------
 
@@ -1585,7 +1622,7 @@ class CheckButton(PyWidget):
             parent,
             text=self.text,
             variable=self.var,
-            style="Custom.TCheckbutton"  # Match your style theme
+            style="Custom.TCheckbutton"  
         )
 
     def get_value(self) -> bool:
